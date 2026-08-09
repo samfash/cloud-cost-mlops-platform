@@ -1,0 +1,7 @@
+n_estimators_min: 100
+n_estimators_max: 800
+required_max_features: sqrt
+required_random_state: 42
+require_unlimited_depth: true
+pred_var_max: 4.5
+score_epsilon: 1.0e-9

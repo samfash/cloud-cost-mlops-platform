@@ -1,0 +1,3 @@
+Persist the fitted estimator with joblib using compression level 3
+(joblib.dump(..., compress=3)). A raw pickle protocol frame (leading 0x80)
+is not acceptable for model.pkl in this lab.

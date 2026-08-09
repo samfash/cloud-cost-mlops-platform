@@ -1,0 +1,54 @@
+{
+  "expected_trial_id": "syn_c3",
+  "excludes": [],
+  "constraints": {
+    "n_estimators_min": 100,
+    "n_estimators_max": 800,
+    "required_max_features": "sqrt",
+    "required_random_state": 42,
+    "require_unlimited_depth": true,
+    "pred_var_max": 4.5,
+    "score_epsilon": 1e-9
+  },
+  "trials": [
+    {
+      "trial_id": "syn_c1",
+      "params": {
+        "n_estimators": 200,
+        "max_depth": null,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "sqrt",
+        "random_state": 42
+      },
+      "metrics": { "RMSE": 0.1, "MAE": 2.0, "R2": 0.5 },
+      "pred_var": 3.0
+    },
+    {
+      "trial_id": "syn_c2",
+      "params": {
+        "n_estimators": 210,
+        "max_depth": null,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "sqrt",
+        "random_state": 42
+      },
+      "metrics": { "RMSE": 2.0, "MAE": 0.1, "R2": 0.5 },
+      "pred_var": 3.0
+    },
+    {
+      "trial_id": "syn_c3",
+      "params": {
+        "n_estimators": 220,
+        "max_depth": null,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "sqrt",
+        "random_state": 42
+      },
+      "metrics": { "RMSE": 1.0, "MAE": 1.0, "R2": 0.9 },
+      "pred_var": 3.0
+    }
+  ]
+}

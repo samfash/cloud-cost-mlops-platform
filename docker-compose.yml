@@ -1,0 +1,56 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cloud-cost-api:latest
+    container_name: cloud-cost-api
+    ports:
+      - "8080:8080"
+    volumes:
+      # Persist CAS store / training outputs; seeded from the image on first start
+      - model-artifacts:/app/cloud-cost/artifacts
+    environment:
+      - PYTHONPATH=/app:/app/cloud-cost
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  model-lab:
+    image: cloud-cost-api:latest
+    container_name: model-lab-api
+    depends_on:
+      api:
+        condition: service_healthy
+    entrypoint: ["python", "-m", "model_lab.app"]
+    working_dir: /app
+    ports:
+      - "8081:8081"
+    environment:
+      - PYTHONPATH=/app:/app/cloud-cost
+    restart: unless-stopped
+
+  train:
+    image: cloud-cost-api:latest
+    profiles: ["train"]
+    working_dir: /app/cloud-cost
+    entrypoint: ["python", "main.py"]
+    volumes:
+      - model-artifacts:/app/cloud-cost/artifacts
+    environment:
+      - PYTHONPATH=/app:/app/cloud-cost
+
+  test:
+    image: cloud-cost-api:latest
+    profiles: ["test"]
+    working_dir: /app
+    entrypoint: ["pytest", "tests/unit", "-q"]
+    environment:
+      - PYTHONPATH=/app:/app/cloud-cost
+
+volumes:
+  model-artifacts:

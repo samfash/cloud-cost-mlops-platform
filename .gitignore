@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+mlruns/
+logs/
+cloud-cost/artifacts/
+cloud-cost/logs/
+model_lab/submission/
+*.egg-info/
+.ruff_cache/

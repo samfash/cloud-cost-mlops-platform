@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Cost Calculator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Arial', sans-serif; overflow-x: hidden; }
+        
+        .page { 
+            min-height: 100vh; 
+            display: none; 
+            background-size: cover; 
+            background-position: center; 
+            position: relative;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        .page.active { display: flex; align-items: center; justify-content: center; }
+        .page::before { 
+            content: ''; 
+            position: absolute; 
+            top: 0; left: 0; right: 0; bottom: 0; 
+            background: rgba(0,0,0,0.4); 
+            z-index: 1; 
+        }
+        
+        .container { 
+            background: rgba(255,255,255,0.95); 
+            padding: 40px; 
+            border-radius: 20px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3); 
+            max-width: 600px; 
+            width: 90%; 
+            z-index: 2; 
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1, h2 { text-align: center; color: #333; margin-bottom: 30px; }
+        h1 { font-size: 2.5em; background: linear-gradient(45deg, #007bff, #0056b3); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            border: 2px solid #ddd; 
+            border-radius: 10px; 
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        input:focus, select:focus { border-color: #007bff; outline: none; box-shadow: 0 0 10px rgba(0,123,255,0.3); }
+        
+        .form-row { display: flex; gap: 20px; }
+        .form-row .form-group { flex: 1; }
+        
+        .btn { 
+            background: linear-gradient(45deg, #007bff, #0056b3); 
+            color: white; 
+            padding: 15px 30px; 
+            border: none; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: bold;
+            transition: all 0.3s;
+            margin: 10px;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,123,255,0.3); }
+        
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 30px; }
+        
+        .cloud-buttons { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        .cloud-btn { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px; 
+            border: 3px solid #ddd; 
+            border-radius: 15px; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+            background: white; 
+            min-width: 120px;
+            transform: scale(1);
+        }
+        .cloud-btn:hover { 
+            border-color: #007bff; 
+            transform: scale(1.05) translateY(-5px); 
+            box-shadow: 0 15px 30px rgba(0,123,255,0.2); 
+        }
+        .cloud-btn img { width: 50px; height: 50px; margin-bottom: 10px; object-fit: contain; }
+        .cloud-btn span { font-weight: bold; color: #333; }
+        input[type="radio"] { display: none; }
+        input[type="radio"]:checked + .cloud-btn { 
+            border-color: #007bff; 
+            background: linear-gradient(135deg, #e7f3ff, #cce7ff); 
+            transform: scale(1.1);
+        }
+        
+        .progress-bar { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            height: 4px; 
+            background: linear-gradient(90deg, #007bff, #0056b3); 
+            transition: width 0.5s ease; 
+            z-index: 1000; 
+        }
+        
+        .page-indicator { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            background: rgba(255,255,255,0.9); 
+            padding: 10px 20px; 
+            border-radius: 20px; 
+            z-index: 1000; 
+            font-weight: bold;
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        
+        .animate-pulse { animation: pulse 2s infinite; }
+        
+        /* Single background for all pages */
+        .page { background-image: url('https://images.hdqwalls.com/wallpapers/mountain-peaks-beautiful-scenery.jpg'); }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="page-indicator" id="pageIndicator">Step 1 of 5</div>
+    
+    <form id="costForm" action="/predict" method="post">
+        <!-- Page 1: Welcome & Resource Usage -->
+        <div class="page page-1 active" id="page1">
+            <div class="container">
+                <h1 class="animate-pulse">☁️ Cloud Cost Calculator</h1>
+                <h2>Resource Usage Metrics</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cpu_usage">💻 CPU Usage (%):</label>
+                        <input type="number" step="0.01" name="cpu_usage" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="memory_usage">🧠 Memory Usage (%):</label>
+                        <input type="number" step="0.01" name="memory_usage" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="net_io">🌐 Network I/O:</label>
+                        <input type="number" step="0.01" name="net_io" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="disk_io">💾 Disk I/O:</label>
+                        <input type="number" step="0.01" name="disk_io" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="utilization">📊 Utilization (%):</label>
+                    <input type="number" step="0.01" name="utilization" required>
+                </div>
+                <div class="nav-buttons">
+                    <div></div>
+                    <button type="button" class="btn" onclick="nextPage()">Next →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 2: VM Configuration -->
+        <div class="page page-2" id="page2">
+            <div class="container">
+                <h2>🖥️ Virtual Machine Configuration</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vCPU">⚡ vCPU Count:</label>
+                        <input type="number" name="vCPU" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="RAM_GB">🔧 RAM (GB):</label>
+                        <input type="number" step="0.1" name="RAM_GB" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="latency_ms">⏱️ Latency (ms):</label>
+                        <input type="number" step="0.01" name="latency_ms" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="throughput">🚀 Throughput:</label>
+                        <input type="number" step="0.01" name="throughput" required>
+                    </div>
+                </div>
+                <div class="nav-buttons">
+                    <button type="button" class="btn" onclick="prevPage()">← Back</button>
+                    <button type="button" class="btn" onclick="nextPage()">Next →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 3: Time Configuration -->
+        <div class="page page-3" id="page3">
+            <div class="container">
+                <h2>🕐 Time Configuration</h2>
+                <div class="form-group">
+                    <label for="datetime">📅 Date & Time:</label>
+                    <input type="datetime-local" id="datetime" onchange="updateTimeFields()" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="hour">Hour:</label>
+                        <input type="number" min="0" max="23" name="hour" id="hour" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="day">Day:</label>
+                        <input type="number" min="1" max="31" name="day" id="day" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="month">Month:</label>
+                        <input type="number" min="1" max="12" name="month" id="month" readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="day_of_week">Day of Week:</label>
+                        <input type="number" min="0" max="6" name="day_of_week" id="day_of_week" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="is_weekend">Weekend:</label>
+                        <input type="number" min="0" max="1" name="is_weekend" id="is_weekend" readonly>
+                    </div>
+                </div>
+                <div class="nav-buttons">
+                    <button type="button" class="btn" onclick="prevPage()">← Back</button>
+                    <button type="button" class="btn" onclick="nextPage()">Next →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 4: Cloud Provider -->
+        <div class="page page-4" id="page4">
+            <div class="container">
+                <h2>☁️ Cloud Provider Selection</h2>
+                <div class="form-group">
+                    <label>Choose Your Cloud Provider:</label>
+                    <div class="cloud-buttons">
+                        <input type="radio" name="cloud_provider" value="AWS" id="aws" required>
+                        <label for="aws" class="cloud-btn">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg" alt="AWS">
+                            <span>AWS</span>
+                        </label>
+                        
+                        <input type="radio" name="cloud_provider" value="Azure" id="azure" required>
+                        <label for="azure" class="cloud-btn">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Microsoft_Azure.svg" alt="Azure">
+                            <span>Azure</span>
+                        </label>
+                        
+                        <input type="radio" name="cloud_provider" value="GCP" id="gcp" required>
+                        <label for="gcp" class="cloud-btn">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/0/01/Google-cloud-platform.svg" alt="GCP">
+                            <span>GCP</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="nav-buttons">
+                    <button type="button" class="btn" onclick="prevPage()">← Back</button>
+                    <button type="button" class="btn" onclick="nextPage()">Next →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 5: Final Configuration -->
+        <div class="page page-5" id="page5">
+            <div class="container">
+                <h2>🎯 Final Configuration</h2>
+                <div class="form-group">
+                    <label>Region:</label>
+                    <div class="cloud-buttons">
+                        <input type="radio" name="region" value="asia-south" id="asia-south" required>
+                        <label for="asia-south" class="cloud-btn">
+                            <span>🌏</span>
+                            <span>Asia South</span>
+                        </label>
+                        
+                        <input type="radio" name="region" value="us-east" id="us-east" required>
+                        <label for="us-east" class="cloud-btn">
+                            <span>🇺🇸</span>
+                            <span>US East</span>
+                        </label>
+                        
+                        <input type="radio" name="region" value="us-west" id="us-west" required>
+                        <label for="us-west" class="cloud-btn">
+                            <span>🌎</span>
+                            <span>US West</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>VM Type:</label>
+                    <div class="cloud-buttons">
+                        <input type="radio" name="vm_type" value="B1s" id="b1s" required>
+                        <label for="b1s" class="cloud-btn">
+                            <span>💻</span>
+                            <span>B1s</span>
+                        </label>
+                        
+                        <input type="radio" name="vm_type" value="n1-standard-1" id="n1-standard" required>
+                        <label for="n1-standard" class="cloud-btn">
+                            <span>🖥️</span>
+                            <span>n1-standard-1</span>
+                        </label>
+                        
+                        <input type="radio" name="vm_type" value="t2.micro" id="t2-micro" required>
+                        <label for="t2-micro" class="cloud-btn">
+                            <span>⚡</span>
+                            <span>t2.micro</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Optimization Target:</label>
+                    <div class="cloud-buttons">
+                        <input type="radio" name="target" value="no_action" id="no-action" required>
+                        <label for="no-action" class="cloud-btn">
+                            <span>⏸️</span>
+                            <span>No Action</span>
+                        </label>
+                        
+                        <input type="radio" name="target" value="scale_down" id="scale-down" required>
+                        <label for="scale-down" class="cloud-btn">
+                            <span>📉</span>
+                            <span>Scale Down</span>
+                        </label>
+                        
+                        <input type="radio" name="target" value="scale_up" id="scale-up" required>
+                        <label for="scale-up" class="cloud-btn">
+                            <span>📈</span>
+                            <span>Scale Up</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="nav-buttons">
+                    <button type="button" class="btn" onclick="prevPage()">← Back</button>
+                    <button type="submit" class="btn animate-pulse">🚀 Calculate Cost</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <script>
+        let currentPage = 1;
+        const totalPages = 5;
+
+        function updateProgress() {
+            const progress = (currentPage / totalPages) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('pageIndicator').textContent = `Step ${currentPage} of ${totalPages}`;
+        }
+
+        function showPage(pageNum) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(`page${pageNum}`).classList.add('active');
+            currentPage = pageNum;
+            updateProgress();
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                showPage(currentPage + 1);
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                showPage(currentPage - 1);
+            }
+        }
+
+        function updateTimeFields() {
+            const datetime = document.getElementById('datetime').value;
+            if (datetime) {
+                const date = new Date(datetime);
+                document.getElementById('hour').value = date.getHours();
+                document.getElementById('day').value = date.getDate();
+                document.getElementById('month').value = date.getMonth() + 1;
+                document.getElementById('day_of_week').value = date.getDay();
+                document.getElementById('is_weekend').value = (date.getDay() === 0 || date.getDay() === 6) ? 1 : 0;
+            }
+        }
+
+        // Initialize
+        window.onload = function() {
+            const now = new Date();
+            const offset = now.getTimezoneOffset() * 60000;
+            const localTime = new Date(now.getTime() - offset);
+            document.getElementById('datetime').value = localTime.toISOString().slice(0, 16);
+            updateTimeFields();
+            updateProgress();
+        }
+    </script>
+</body>
+</html>

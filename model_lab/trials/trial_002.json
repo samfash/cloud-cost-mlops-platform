@@ -1,0 +1,17 @@
+{
+  "trial_id": "trial_002",
+  "params": {
+    "n_estimators": 350,
+    "max_depth": 12,
+    "min_samples_split": 2,
+    "min_samples_leaf": 2,
+    "max_features": "sqrt",
+    "random_state": 42
+  },
+  "metrics": {
+    "RMSE": 35.60931805823677,
+    "MAE": 26.95966464966661,
+    "R2": 0.8899041986769832
+  },
+  "pred_var": 6586.712898652863
+}

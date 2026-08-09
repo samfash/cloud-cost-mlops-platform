@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+import json
+import os
+import sys
+from pathlib import Path
+from typing import Any
+
+import joblib
+import yaml
+from box import ConfigBox
+from box.exceptions import BoxValueError
+from ensure import ensure_annotations
+
+from src.exception.exception import CustomException
+from src.logging.logger import logging
+
+
+# read yaml
+@ensure_annotations
+def read_yaml(path_to_yaml: Path) -> ConfigBox:
+    try:
+        with open(path_to_yaml) as yaml_file:
+            content = yaml.safe_load(yaml_file)
+            logging.info(f"yaml file: {path_to_yaml} loaded successfully")
+            return ConfigBox(content)
+    except BoxValueError:
+        msg = "yaml file is empty"
+        raise ValueError(msg) from None
+    except Exception as e:
+        raise CustomException(e, sys) from e
+
+
+# create directories
+@ensure_annotations
+def create_directories(path_to_directories: list, verbose=True):
+    for path in path_to_directories:
+        os.makedirs(path, exist_ok=True)
+        if verbose:
+            logging.info(f"created directory at: {path}")
+
+
+# save any data to json
+@ensure_annotations
+def save_json(path: Path, data: dict):
+    with open(path, "w") as f:
+        json.dump(data, f, indent=4)
+    logging.info(f"json file saved at: {path}")
+
+
+# load that json
+@ensure_annotations
+def load_json(path: Path) -> ConfigBox:
+    with open(path) as f:
+        content = json.load(f)
+    logging.info(f"json file loaded successfully from: {path}")
+    return ConfigBox(content)
+
+
+# save into model
+@ensure_annotations
+def save_bin(data: Any, path: Path):
+    joblib.dump(value=data, filename=path)
+    logging.info(f"binary file saved at: {path}")
+
+
+# load the model
+@ensure_annotations
+def load_bin(path: Path) -> Any:
+    data = joblib.load(path)
+    logging.info(f"binary file loaded from: {path}")
+    return data

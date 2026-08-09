@@ -1,0 +1,28 @@
+{
+  "expected_trial_id": "syn_boundary",
+  "excludes": [],
+  "constraints": {
+    "n_estimators_min": 100,
+    "n_estimators_max": 800,
+    "required_max_features": "sqrt",
+    "required_random_state": 42,
+    "require_unlimited_depth": true,
+    "pred_var_max": 4.5,
+    "score_epsilon": 1e-9
+  },
+  "trials": [
+    {
+      "trial_id": "syn_boundary",
+      "params": {
+        "n_estimators": 800,
+        "max_depth": null,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "sqrt",
+        "random_state": 42
+      },
+      "metrics": { "RMSE": 0.5, "MAE": 0.4, "R2": 0.9 },
+      "pred_var": 1.0
+    }
+  ]
+}

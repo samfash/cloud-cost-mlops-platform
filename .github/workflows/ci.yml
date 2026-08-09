@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends regina-rexx git
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Unit tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/cloud-cost
+        run: pytest tests/unit -q
+
+      - name: Train + package (smoke)
+        working-directory: cloud-cost
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/cloud-cost
+        run: python main.py
+
+      - name: Model lab submission
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/cloud-cost
+        run: python -m model_lab.cli
+
+      - name: API smoke tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/cloud-cost
+        run: pytest tests/integration/test_api_smoke.py -q
+
+      - name: Docker build
+        run: docker build -t cloud-cost-api:ci .
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install ruff==0.11.0
+      - run: ruff check cloud-cost/src model_lab tests/unit

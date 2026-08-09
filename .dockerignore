@@ -1,0 +1,14 @@
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.ruff_cache/
+**/.git/
+**/.venv/
+**/venv/
+**/mlruns/
+**/logs/
+cloud-cost/artifacts/
+model_lab/submission/
+*.md
+!README.md
+tests/legacy_harbor/

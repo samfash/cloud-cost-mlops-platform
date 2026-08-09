@@ -1,0 +1,20 @@
+COLUMNS:
+  timestamp: object
+  cpu_usage: float64
+  memory_usage: float64
+  net_io: float64
+  disk_io: float64
+  cloud_provider: object
+  region: object
+  vm_type: object
+  vCPU: int64
+  RAM_GB: float64
+  price_per_hour: float64
+  target: object
+  latency_ms: float64
+  throughput: float64
+  utilization: float64
+  cost: float64
+
+TARGET_COLUMN:
+  name: cost

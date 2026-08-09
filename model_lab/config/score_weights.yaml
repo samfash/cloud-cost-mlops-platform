@@ -1,0 +1,5 @@
+# Retired linear blend (do not use for election)
+
+rmse_weight: 0.45
+mae_weight: 0.35
+r2_weight: 0.20
