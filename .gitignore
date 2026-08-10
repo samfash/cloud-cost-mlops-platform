@@ -7,6 +7,7 @@ htmlcov/
 venv/
 mlruns/
 logs/
+backups/
 cloud-cost/artifacts/
 cloud-cost/logs/
 model_lab/submission/

@@ -1,0 +1,61 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Model loaded",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "model_loaded{service=\"cloud-cost-api\"}",
+          "legendFormat": "loaded"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Request rate",
+      "gridPos": { "h": 8, "w": 12, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{service=\"cloud-cost-api\"}[5m])) by (status)",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Predict latency (p95)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(predict_latency_seconds_bucket{service=\"cloud-cost-api\"}[5m])) by (le))",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Predict outcomes",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(predict_requests_total{service=\"cloud-cost-api\"}[5m])) by (outcome)",
+          "legendFormat": "{{outcome}}"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["cloud-cost", "mlops"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "Cloud Cost API Overview",
+  "uid": "cloud-cost-overview",
+  "version": 1
+}

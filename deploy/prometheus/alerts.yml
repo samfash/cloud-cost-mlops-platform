@@ -1,0 +1,70 @@
+groups:
+  - name: cloud-cost-api
+    rules:
+      - alert: CloudCostModelNotLoaded
+        expr: model_loaded{service="cloud-cost-api"} == 0
+        for: 2m
+        labels:
+          severity: page
+          service: cloud-cost-api
+        annotations:
+          summary: Inference model not loaded
+          description: CAS-backed prediction model has been unloaded for more than 2 minutes.
+
+      - alert: CloudCostHigh5xxRate
+        expr: |
+          sum(rate(http_requests_total{service="cloud-cost-api",status=~"5.."}[5m]))
+            /
+          clamp_min(sum(rate(http_requests_total{service="cloud-cost-api"}[5m])), 1e-9)
+            > 0.05
+        for: 5m
+        labels:
+          severity: page
+          service: cloud-cost-api
+        annotations:
+          summary: Elevated 5xx rate on inference API
+          description: More than 5% of requests are failing with 5xx over 5 minutes.
+
+      - alert: CloudCostPredictErrorRate
+        expr: |
+          sum(rate(predict_errors_total{service="cloud-cost-api"}[5m]))
+            /
+          clamp_min(sum(rate(predict_requests_total{service="cloud-cost-api"}[5m])), 1e-9)
+            > 0.05
+        for: 5m
+        labels:
+          severity: ticket
+          service: cloud-cost-api
+        annotations:
+          summary: Elevated prediction error rate
+          description: Prediction error rate exceeded 5% for 5 minutes.
+
+      - alert: CloudCostPredictLatencyP95
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(predict_latency_seconds_bucket{service="cloud-cost-api"}[5m])) by (le)
+          ) > 1
+        for: 10m
+        labels:
+          severity: ticket
+          service: cloud-cost-api
+        annotations:
+          summary: Prediction p95 latency above 1s
+          description: p95 predict latency exceeded 1 second for 10 minutes.
+
+  - name: model-lab-api
+    rules:
+      - alert: ModelLabSelectErrors
+        expr: |
+          sum(rate(model_lab_select_requests_total{outcome="error"}[5m]))
+            /
+          clamp_min(sum(rate(model_lab_select_requests_total[5m])), 1e-9)
+            > 0.1
+        for: 5m
+        labels:
+          severity: ticket
+          service: model-lab-api
+        annotations:
+          summary: Model lab election errors elevated
+          description: More than 10% of /api/select calls are failing.

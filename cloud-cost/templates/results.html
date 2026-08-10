@@ -1,273 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prediction Results - Cloud Cost Calculator</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Arial', sans-serif; 
-            background-image: url('https://images.hdqwalls.com/wallpapers/mountain-peaks-beautiful-scenery.jpg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-        
-        body::before { 
-            content: ''; 
-            position: fixed; 
-            top: 0; left: 0; right: 0; bottom: 0; 
-            background: rgba(0,0,0,0.4); 
-            z-index: 1; 
-        }
-        
-        .container { 
-            background: rgba(255,255,255,0.95); 
-            padding: 40px; 
-            border-radius: 20px; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3); 
-            max-width: 900px; 
-            width: 90%; 
-            z-index: 2; 
-            position: relative;
-            backdrop-filter: blur(10px);
-            animation: slideUp 0.8s ease-out;
-        }
-        
-        h1 { 
-            text-align: center; 
-            color: #333; 
-            margin-bottom: 30px; 
-            font-size: 2.5em;
-            background: linear-gradient(45deg, #007bff, #0056b3); 
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .result-box { 
-            background: linear-gradient(135deg, #007bff, #0056b3); 
-            color: white;
-            border-radius: 20px; 
-            padding: 30px; 
-            margin: 30px 0; 
-            text-align: center;
-            box-shadow: 0 15px 30px rgba(0,123,255,0.3);
-            animation: pulse 2s infinite;
-        }
-        
-        .prediction { 
-            font-size: 3em; 
-            font-weight: bold; 
-            margin: 15px 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .input-summary { 
-            background: rgba(248,249,250,0.9); 
-            border-radius: 15px; 
-            padding: 30px; 
-            margin: 30px 0;
-            backdrop-filter: blur(5px);
-        }
-        
-        .input-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
-            gap: 20px; 
-        }
-        
-        .input-item { 
-            background: white; 
-            padding: 20px; 
-            border-radius: 15px; 
-            border-left: 5px solid #007bff;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        
-        .input-item:hover { 
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,123,255,0.2);
-        }
-        
-        .input-label { 
-            font-weight: bold; 
-            color: #495057; 
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .input-value { 
-            color: #007bff; 
-            font-size: 18px;
-            font-weight: bold;
-            margin-top: 5px;
-        }
-        
-        .actions { 
-            text-align: center; 
-            margin-top: 40px; 
-        }
-        
-        .btn { 
-            display: inline-block; 
-            padding: 15px 30px; 
-            margin: 0 15px; 
-            text-decoration: none; 
-            border-radius: 15px; 
-            font-weight: bold;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-        }
-        
-        .btn-primary { 
-            background: linear-gradient(45deg, #007bff, #0056b3); 
-            color: white;
-            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
-        }
-        
-        .btn-secondary { 
-            background: linear-gradient(45deg, #6c757d, #495057); 
-            color: white;
-            box-shadow: 0 5px 15px rgba(108,117,125,0.3);
-        }
-        
-        .btn:hover { 
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        }
-        
-        .stats-row {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-        
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            min-width: 150px;
-            margin: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            border-top: 4px solid #007bff;
-        }
-        
-        .stat-number {
-            font-size: 2em;
-            font-weight: bold;
-            color: #007bff;
-        }
-        
-        .stat-label {
-            color: #6c757d;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-        
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(50px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-        }
-        
-        .icon {
-            font-size: 1.5em;
-            margin-right: 10px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>💰 Cloud Cost Prediction Results</h1>
-        
-        <div class="result-box">
-            <div class="icon">🎯</div>
-            <h2>Predicted Cost</h2>
-            <div class="prediction">${{ "%.4f"|format(prediction) }}</div>
-            <p>Based on your configuration, this is the estimated cloud cost per hour.</p>
-        </div>
-
-        <div class="stats-row">
-            <div class="stat-card">
-                <div class="stat-number">{{ input_data.cpu_usage }}%</div>
-                <div class="stat-label">CPU Usage</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ input_data.memory_usage }}%</div>
-                <div class="stat-label">Memory Usage</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ input_data.vCPU }}</div>
-                <div class="stat-label">vCPU Count</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ input_data.RAM_GB }}GB</div>
-                <div class="stat-label">RAM</div>
-            </div>
-        </div>
-
-        <div class="input-summary">
-            <h3>📊 Configuration Summary</h3>
-            <div class="input-grid">
-                <div class="input-item">
-                    <div class="input-label">🌐 Network I/O</div>
-                    <div class="input-value">{{ input_data.net_io }}</div>
-                </div>
-                <div class="input-item">
-                    <div class="input-label">💾 Disk I/O</div>
-                    <div class="input-value">{{ input_data.disk_io }}</div>
-                </div>
-                <div class="input-item">
-                    <div class="input-label">⏱️ Latency</div>
-                    <div class="input-value">{{ input_data.latency_ms }} ms</div>
-                </div>
-                <div class="input-item">
-                    <div class="input-label">🚀 Throughput</div>
-                    <div class="input-value">{{ input_data.throughput }}</div>
-                </div>
-                <div class="input-item">
-                    <div class="input-label">📊 Utilization</div>
-                    <div class="input-value">{{ input_data.utilization }}%</div>
-                </div>
-                <div class="input-item">
-                    <div class="input-label">☁️ Cloud Provider</div>
-                    <div class="input-value">{{ input_data.cloud_provider }}</div>
-                </div>
-                <div class="input-item">
-                    <div class="input-label">🌍 Region</div>
-                    <div class="input-value">{{ input_data.region }}</div>
-                </div>
-                <div class="input-item">
-                    <div class="input-label">🖥️ VM Type</div>
-                    <div class="input-value">{{ input_data.vm_type }}</div>
-                </div>
-                <div class="input-item">
-                    <div class="input-label">🎯 Target</div>
-                    <div class="input-value">{{ input_data.target }}</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="actions">
-            <a href="/" class="btn btn-primary">🔄 New Prediction</a>
-            <button onclick="window.print()" class="btn btn-secondary">🖨️ Print Results</button>
-        </div>
+{% extends "base.html" %}
+{% block title %}CloudCost · Result{% endblock %}
+{% block content %}
+<section class="shell">
+  <div class="panel">
+    <div class="result-hero">
+      <h1>Estimated hourly cost</h1>
+      <p class="result-value">${{ "%.4f"|format(prediction) }}</p>
+      <p>Based on the configuration below. Use this as a planning signal, not an invoice.</p>
     </div>
-</body>
-</html>
+
+    <div class="meta-grid">
+      <div class="meta-item"><div class="label">CPU usage</div><div class="value">{{ input_data.cpu_usage }}%</div></div>
+      <div class="meta-item"><div class="label">Memory usage</div><div class="value">{{ input_data.memory_usage }}%</div></div>
+      <div class="meta-item"><div class="label">vCPU</div><div class="value">{{ input_data.vCPU }}</div></div>
+      <div class="meta-item"><div class="label">RAM</div><div class="value">{{ input_data.RAM_GB }} GB</div></div>
+      <div class="meta-item"><div class="label">Provider</div><div class="value">{{ input_data.cloud_provider }}</div></div>
+      <div class="meta-item"><div class="label">Region</div><div class="value">{{ input_data.region }}</div></div>
+      <div class="meta-item"><div class="label">VM type</div><div class="value">{{ input_data.vm_type }}</div></div>
+      <div class="meta-item"><div class="label">Target</div><div class="value">{{ input_data.target }}</div></div>
+      <div class="meta-item"><div class="label">Latency</div><div class="value">{{ input_data.latency_ms }} ms</div></div>
+      <div class="meta-item"><div class="label">Throughput</div><div class="value">{{ input_data.throughput }}</div></div>
+      <div class="meta-item"><div class="label">Utilization</div><div class="value">{{ input_data.utilization }}%</div></div>
+      <div class="meta-item"><div class="label">Network / disk I/O</div><div class="value">{{ input_data.net_io }} / {{ input_data.disk_io }}</div></div>
+    </div>
+
+    <div class="nav-row">
+      <a class="btn btn-ghost" href="{{ url_for('overview') }}">Back to overview</a>
+      <a class="btn btn-primary" href="{{ url_for('home') }}">New estimate</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

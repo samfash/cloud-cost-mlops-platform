@@ -1,22 +1,40 @@
 ---
-Status: Gap
+Status: Partial
 Owner: Platform
-Last updated: 2026-08-09
+Last updated: 2026-08-10
 ---
 
 # Disaster recovery
 
-## Assets to protect
+## Implemented
 
-- `artifacts/model_bundle/` (CAS)
-- Dataset + params/schema
-- Image registry tags
+CAS backup/restore scripts for the immutable model store:
 
-## Current posture
+```bash
+./scripts/backup_cas.sh
+# -> backups/model_bundle_<timestamp>.tar.gz (+ .sha256)
 
-Local/volume backed; recreate via `python main.py` or image rebuild.
+./scripts/restore_cas.sh backups/model_bundle_<timestamp>.tar.gz
+# restart API afterward so HEAD is reloaded
+docker compose restart api
+```
 
-> **GAP:** No DR runbook with proven RTO/RPO. Next actions:
-> 1. State RTO/RPO targets (e.g. RPO=24h artifacts backup)
-> 2. Script CAS tarball backup/restore
-> 3. Schedule a restore drill and record results
+CI runs a **backup → wipe → restore** drill after the train smoke step and asserts `HEAD` is restored.
+
+| Item | Target (design) | Proven? |
+|------|-----------------|---------|
+| RPO (model store) | Last successful backup | Partial — scripts + CI drill |
+| RTO (restore + restart) | < 15 minutes local/Compose | Partial — restore path exercised in CI; full restart RTO not timed in CI |
+
+## Recovery steps (Compose)
+
+1. Stop API: `docker compose stop api`
+2. Restore archive into `cloud-cost/artifacts/model_bundle`
+3. Start API: `docker compose start api`
+4. Verify: `curl -fsS localhost:8080/ready` and a sample `/api/predict`
+
+## Still open (GAP)
+
+> **GAP:** No scheduled offsite backups / multi-AZ story.
+>
+> Next actions: nightly backup artifact upload to object storage; quarterly timed restore drill with recorded RTO.

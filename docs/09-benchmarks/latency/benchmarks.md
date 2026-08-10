@@ -1,9 +1,16 @@
 ---
-Status: Gap
+Status: Partial
 Owner: Platform
-Last updated: 2026-08-09
+Last updated: 2026-08-10
 ---
 
 # Latency benchmarks
 
-> **GAP:** No formal API latency benchmark harness (p50/p95). Next: add k6 or pytest-benchmark for `/api/predict` cold vs warm.
+## Implemented
+
+- Integration smoke `tests/integration/test_predict_latency.py` asserts warm `/api/predict` wall time &lt; 250ms (local RF / cache path).
+- Prometheus histogram `predict_latency_seconds` + Grafana overview panel.
+
+## Still open
+
+> Formal k6 multi-VU soak and published p50/p95 tables across hardware classes remain open.

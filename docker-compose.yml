@@ -8,16 +8,34 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      # Persist CAS store / training outputs; seeded from the image on first start
       - model-artifacts:/app/cloud-cost/artifacts
     environment:
       - PYTHONPATH=/app:/app/cloud-cost
+      - LOG_LEVEL=INFO
+      # Optional API_KEY (empty = open). Generous default rate limit; set 0 to disable.
+      - API_KEY=${API_KEY:-}
+      - RATE_LIMIT_PER_MINUTE=${RATE_LIMIT_PER_MINUTE:-600}
+      - PREDICT_CACHE_ENABLED=${PREDICT_CACHE_ENABLED:-1}
+      - PREDICT_CACHE_SIZE=${PREDICT_CACHE_SIZE:-1024}
+      - PREDICT_CACHE_TTL_SECONDS=${PREDICT_CACHE_TTL_SECONDS:-300}
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/ready"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 40s
+    # Compose v2 honors cpus/mem_limit; deploy.resources kept for Swarm parity.
+    cpus: "2.0"
+    mem_limit: 2g
+    mem_reservation: 512m
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+        reservations:
+          cpus: "0.25"
+          memory: 512M
     restart: unless-stopped
 
   model-lab:
@@ -26,12 +44,43 @@ services:
     depends_on:
       api:
         condition: service_healthy
-    entrypoint: ["python", "-m", "model_lab.app"]
     working_dir: /app
+    entrypoint: ["/usr/bin/tini", "--"]
+    command:
+      - gunicorn
+      - --bind=0.0.0.0:8081
+      - --workers=1
+      - --threads=2
+      - --timeout=60
+      - --graceful-timeout=30
+      - --access-logfile=-
+      - --error-logfile=-
+      - --capture-output
+      - model_lab.app:app
     ports:
       - "8081:8081"
     environment:
       - PYTHONPATH=/app:/app/cloud-cost
+      - LOG_LEVEL=INFO
+      - API_KEY=${API_KEY:-}
+      - RATE_LIMIT_PER_MINUTE=${RATE_LIMIT_PER_MINUTE:-600}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8081/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    cpus: "1.0"
+    mem_limit: 1g
+    mem_reservation: 256m
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+        reservations:
+          cpus: "0.1"
+          memory: 256M
     restart: unless-stopped
 
   train:
@@ -48,9 +97,48 @@ services:
     image: cloud-cost-api:latest
     profiles: ["test"]
     working_dir: /app
-    entrypoint: ["pytest", "tests/unit", "-q"]
+    # Use image-baked artifacts (no volume overlay) for deterministic smoke tests
+    entrypoint: ["pytest", "tests/unit", "tests/integration", "-q", "-m", "not slow"]
     environment:
       - PYTHONPATH=/app:/app/cloud-cost
+
+  prometheus:
+    image: prom/prometheus:v3.4.1
+    profiles: ["obs"]
+    container_name: cloud-cost-prometheus
+    depends_on:
+      api:
+        condition: service_healthy
+      model-lab:
+        condition: service_healthy
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-lifecycle
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.6.0
+    profiles: ["obs"]
+    container_name: cloud-cost-grafana
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    restart: unless-stopped
 
 volumes:
   model-artifacts:

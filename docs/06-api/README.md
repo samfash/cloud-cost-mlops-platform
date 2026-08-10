@@ -1,12 +1,12 @@
 ---
 Status: Partial
 Owner: Platform
-Last updated: 2026-08-09
+Last updated: 2026-08-10
 ---
 
 # 06 — API
 
-Documented Flask surfaces; OpenAPI YAML reflects real paths. Webhooks/SDKs are gaps.
+Documented Flask surfaces with `/ready`, `/metrics`, and optional `API_KEY` / rate limits (off by default). OpenAPI YAML reflects real paths. Webhooks/SDKs remain gaps.
 
 ## Contents
 

@@ -1,23 +1,31 @@
 ---
-Status: Implemented
+Status: Partial
 Owner: Platform
-Last updated: 2026-08-09
+Last updated: 2026-08-10
 ---
 
 # CI/CD
 
-GitHub Actions `.github/workflows/ci.yml`:
+## Implemented (CI)
 
-```mermaid
-flowchart LR
-  A[checkout] --> B[unit tests]
-  B --> C[train + package smoke]
-  C --> D[model_lab CLI]
-  D --> E[API smoke]
-  E --> F[docker build]
-  A --> G[ruff lint]
-```
+GitHub Actions (`.github/workflows/ci.yml`):
 
-Triggers: push to `main`/`master`, pull requests. Python 3.13, installs `regina-rexx`.
+1. Unit tests (including optional API guards)
+2. Train + package smoke
+3. CAS backup/restore drill
+4. Model-lab CLI submission
+5. Integration tests (`/ready`, `/metrics`, `/api/predict`, model-lab select)
+6. Docker image build
+7. `docker compose` smoke (ready + predict + select)
+8. Observability profile smoke (Prometheus alert rules loaded)
+9. Trivy image scan (informational; `exit-code: 0`)
+10. Ruff lint
 
-No CD promotion to a hosted environment yet.
+## Still open (GAP)
+
+> **GAP:** No CD (image publish to GHCR/ECR), no hard SBOM gate, no staging environment.
+>
+> Next actions:
+> 1. Publish `ghcr.io/<org>/cloud-cost-api` on main
+> 2. Fail CI on CRITICAL Trivy findings once baseline is clean
+> 3. Deploy-to-staging job after smoke

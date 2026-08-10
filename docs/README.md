@@ -1,19 +1,21 @@
 ---
 Status: Partial
 Owner: Platform
-Last updated: 2026-08-09
+Last updated: 2026-08-10
 ---
 
 # Engineering Research Portfolio
 
 Portfolio documentation for the **Cloud Cost Prediction** platform: a FinOps / MLOps system that trains a RandomForest cost model, packages it into an immutable CAS store, serves inference on Flask, and elects RandomForest trials via REXX Borda/Copeland voting.
 
-This tree separates **IMPLEMENTED NOW** from **PLANNED / GAP** so research expansion into LLM cost, latency, and quality intelligence stays honest.
+**Near-term focus:** cloud-server cost prediction reliability, observability, and infrastructure — not LLM tokens/prompts.
+
+This tree separates **IMPLEMENTED NOW** from **PLANNED / GAP**.
 
 | Field | Value |
 |-------|-------|
 | Portfolio root | `docs/` |
-| Last updated | 2026-08-09 |
+| Last updated | 2026-08-10 |
 | Primary code | `cloud-cost/`, `model_lab/` |
 | Inference | `:8080` |
 | Model lab | `:8081` |
@@ -44,8 +46,9 @@ This tree separates **IMPLEMENTED NOW** from **PLANNED / GAP** so research expan
 - **Pipeline:** `data_validation` → `data_transformation` → `model_trainer` → `model_evaluation` → CAS `model_packaging`
 - **Re-runs:** Git blob SHA-256 digests under `artifacts/.pipeline/`; unchanged stages skip
 - **CAS store:** `HEAD`, `pins.json`, `RELEASES`, `catalog.sqlite`, `objects/`, `versions/`
-- **APIs:** Flask inference (`/health`, `/predict`, `/api/predict`) on **8080**; model_lab election (`/health`, `/api/select`) on **8081**
-- **Ops:** Docker, docker-compose, GitHub Actions CI
+- **APIs:** Flask inference (`/`, `/estimate`, `/health`, `/ready`, `/metrics`, `/predict`, `/api/predict`) on **8080**; model_lab election on **8081**
+- **UI:** Corporate overview for non-technical users + estimate wizard
+- **Ops:** Docker/Compose, CI, Prometheus/Grafana (`--profile obs`), prediction cache, default rate limits, optional `API_KEY`
 - **Holdout (observed):** MAE ≈ 0.00116, RMSE ≈ 0.00182, R² ≈ 0.999 — **caveat:** ~1000-row synthetic `Cloud_Dataset.csv`
 
 ```mermaid
@@ -62,28 +65,31 @@ flowchart LR
 
 ## Gap Register (top-level)
 
-> Every item below is **not** implemented (or only sketched). See section docs for next actions.
+> Items marked **Partial** have a working foundation in-repo; remaining work is called out in section docs.
+> LLM token/prompt items are explicitly **deferred** (out of current cloud-server scope).
 
-1. LLM token / request pricing intelligence (provider rate cards, cache/discount modeling)
-2. Tokenization cost attribution and prompt→token estimators
-3. Latency-prediction model (p50/p95/p99) beyond raw feature `latency_ms`
-4. Quality / usefulness prediction for LLM responses
-5. Recommendation engine for VM / region / model routing
-6. Prompt optimization loop (auto rewrite / few-shot selection)
-7. Production OpenAPI codegen + typed SDKs (Python/TS)
-8. Outbound webhooks / event bus for publish & election events
-9. Paid competitor teardown with primary-source pricing data
-10. Production observability stack (Prometheus/OTel, dashboards, SLOs)
-11. Alerting routes (PagerDuty/Slack) with runbook links
-12. Disaster-recovery runbooks with proven RTO/RPO drills
-13. Real FinOps CUR/BigQuery billing ingestion (vs synthetic CSV)
-14. AuthN/AuthZ, rate limiting, and multi-tenant isolation on APIs
-15. Online feature store + training/serving skew monitors
-16. Model monitoring / drift detection in production
-17. Multi-model serving (canary, shadow, A/B) beyond HEAD pin
-18. Horizontal autoscaling / K8s manifests (compose-only today)
-19. Formal threat-model review with residual risk sign-off
-20. Public paper / blog artifacts and external references curation completeness
+| # | Item | Status |
+|---|------|--------|
+| 1 | LLM token / request pricing intelligence | Deferred |
+| 2 | Tokenization / prompt→token estimators | Deferred |
+| 3 | Latency-prediction model (beyond feature `latency_ms`) | Gap |
+| 4 | Quality / usefulness prediction (LLM) | Deferred |
+| 5 | Recommendation engine (VM / region routing) | Gap |
+| 6 | Prompt optimization loop | Deferred |
+| 7 | OpenAPI codegen + typed SDKs | Gap |
+| 8 | Outbound webhooks / event bus | Gap |
+| 9 | Paid competitor teardown with primary data | Gap |
+| 10 | Observability (JSON logs, `/metrics`, `/ready`, Prometheus + Grafana profile) | **Partial** — OTel/SLO burn/log aggregation remain |
+| 11 | Alerting (checked-in Prometheus rules; no pager routes) | **Partial** — Alertmanager/Slack/PagerDuty remain |
+| 12 | Disaster recovery (CAS backup/restore + CI drill) | **Partial** — offsite/multi-AZ remain |
+| 13 | Real FinOps CUR/BigQuery billing ingestion | Gap |
+| 14 | AuthN/AuthZ, rate limiting, multi-tenant isolation | **Partial** — optional `API_KEY` + Compose default rate limit; no multi-tenant AuthZ |
+| 15 | Online feature store + train/serve skew monitors | **Partial** — predict-time range monitor (log-only) |
+| 16 | Model monitoring / drift detection | **Partial** — out-of-band feature warnings; no dashboard yet |
+| 17 | Multi-model serving (canary/shadow/A/B) | Gap |
+| 18 | Kubernetes / HPA (Compose-only today) | Gap |
+| 19 | Formal threat-model residual-risk sign-off | **Partial** — draft + mitigations updated; formal sign-off open |
+| 20 | External papers / references curation completeness | Gap |
 
 ## How to read status labels
 

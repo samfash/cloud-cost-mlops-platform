@@ -15,8 +15,12 @@ Engineering research portfolio (vision, architecture, ML, ADRs, gaps):
 | **Training pipeline** | Validation → transformation → train → evaluate → CAS packaging |
 | **Efficient re-runs** | Per-stage Git-blob digests under `artifacts/.pipeline/`; unchanged stages skip |
 | **Model packaging** | Immutable content-addressed store (`artifacts/model_bundle/`) with promotion gates |
-| **Inference API** | Flask + Gunicorn on port **8080** (`/`, `/health`, `/predict`, `/api/predict`) |
-| **Model lab** | Regina REXX Borda/Copeland trial election + submission training on port **8081** |
+| **Inference API** | Flask + Gunicorn on **8080** (`/`, `/estimate`, `/health`, `/ready`, `/metrics`, `/predict`, `/api/predict`) |
+| **UI** | Non-technical overview at `/` + corporate estimate wizard at `/estimate` |
+| **Model lab** | REXX election API on **8081** (`/health`, `/ready`, `/metrics`, `/api/select`) |
+| **Observability** | JSON stdout logs, `X-Request-Id`, Prometheus metrics + alert rules; optional Grafana via `docker compose --profile obs` |
+| **Caching** | In-process predict cache (TTL/LRU); `cache_hit` on JSON responses |
+| **API guards** | Optional `API_KEY`; Compose default `RATE_LIMIT_PER_MINUTE=600` |
 
 ## Project layout
 
@@ -53,11 +57,15 @@ This builds the image (trains + packages the cloud-cost model during the image b
 - **Inference API** at http://localhost:8080  
 - **Model lab API** at http://localhost:8081  
 
-Check health:
+Check readiness (orchestration probe) and metrics:
 
 ```bash
-curl http://localhost:8080/health
-curl http://localhost:8081/health
+curl http://localhost:8080/ready
+curl http://localhost:8081/ready
+curl http://localhost:8080/metrics | head
+# optional Prometheus + Grafana: docker compose --profile obs up -d
+#   Prometheus → http://localhost:9090
+#   Grafana    → http://localhost:3000
 ```
 
 ### Predict cloud cost
@@ -83,7 +91,10 @@ curl -X POST http://localhost:8080/api/predict \
   }'
 ```
 
-Browser UI: open http://localhost:8080/
+Browser UI:
+
+- Overview (non-technical): http://localhost:8080/
+- Estimate wizard: http://localhost:8080/estimate
 
 ### Elect a model-lab trial
 
@@ -148,10 +159,13 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on push/PR:
 
 1. Unit tests  
 2. Full training + packaging smoke  
-3. Model-lab submission build  
-4. API smoke tests  
-5. Docker image build  
-6. Ruff lint  
+3. CAS backup/restore drill  
+4. Model-lab submission build  
+5. API + model-lab integration tests  
+6. Docker image build + compose smoke  
+7. Observability profile smoke (Prometheus rules)  
+8. Trivy image scan (informational)  
+9. Ruff lint  
 
 ## API reference
 
@@ -159,16 +173,21 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on push/PR:
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/` | HTML prediction form |
-| GET | `/health` | Model load status, version, metrics |
+| GET | `/` | Non-technical overview |
+| GET | `/estimate` | Cost estimate wizard |
+| GET | `/health` | Liveness / model metadata |
+| GET | `/ready` | Readiness (503 if model missing) |
+| GET | `/metrics` | Prometheus metrics |
 | POST | `/predict` | Form-encoded prediction → HTML |
-| POST | `/api/predict` | JSON prediction → `{"prediction": float, "status": "success"}` |
+| POST | `/api/predict` | JSON prediction → `prediction` + `status` (+ additive fields) |
 
 ### Model lab (`:8081`)
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Service health |
+| GET | `/ready` | Readiness (trials/constraints/REXX present) |
+| GET | `/metrics` | Prometheus metrics |
 | POST | `/api/select` | Run REXX election; returns chosen trial JSON |
 
 ## Notes

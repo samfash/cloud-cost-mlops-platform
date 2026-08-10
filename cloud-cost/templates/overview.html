@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}CloudCost · What this does{% endblock %}
+{% block content %}
+<section class="shell hero">
+  <div class="hero-copy">
+    <h1>Know what a cloud server may cost — before you scale it.</h1>
+    <p>
+      CloudCost helps finance, ops, and product teams estimate the hourly cost of a virtual machine
+      from simple usage and size inputs. No machine-learning jargon required.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="{{ url_for('home') }}">Try an estimate</a>
+      <a class="btn btn-ghost" href="#how-it-works">See how it works</a>
+    </div>
+  </div>
+  <aside class="hero-panel" aria-label="Plain-language summary">
+    <strong>Built for decisions, not dashboards.</strong>
+    <p>
+      Enter how busy a server looks, pick a cloud and size, and get a clear cost estimate
+      you can compare across options.
+    </p>
+  </aside>
+</section>
+
+<section class="shell section" id="how-it-works">
+  <h2>What you can do here</h2>
+  <p>Four plain steps — useful even if you never touch the technical API.</p>
+  <ol class="plain-list">
+    <li>
+      <div class="step">01</div>
+      <div>
+        <h3>Describe the workload</h3>
+        <p>Share CPU, memory, network, and how utilized the machine usually is.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step">02</div>
+      <div>
+        <h3>Choose the cloud shape</h3>
+        <p>Pick a provider, region, and VM type that matches what you are evaluating.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step">03</div>
+      <div>
+        <h3>Get an hourly cost estimate</h3>
+        <p>The service returns a predicted cost so you can compare “scale up” vs “stay put”.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step">04</div>
+      <div>
+        <h3>Use it in planning conversations</h3>
+        <p>
+          Finance can sanity-check spend; engineering can compare options before changing capacity.
+          Technical teams can also call the same model through the JSON API.
+        </p>
+      </div>
+    </li>
+  </ol>
+</section>
+
+<section class="shell section">
+  <h2>What this is not</h2>
+  <p>
+    It is not a full cloud bill, a reservation recommender, or an automatic scaler.
+    It is a fast estimate to support clearer capacity and cost conversations.
+  </p>
+  <div class="hero-actions" style="margin-top: 1.5rem;">
+    <a class="btn btn-primary" href="{{ url_for('home') }}">Start with the estimate form</a>
+  </div>
+</section>
+{% endblock %}
