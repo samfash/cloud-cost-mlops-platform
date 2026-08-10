@@ -1,7 +1,7 @@
 ---
 Status: Implemented
 Owner: Platform
-Last updated: 2026-08-09
+Last updated: 2026-08-10
 ---
 
 # Cost prediction (IMPLEMENTED)
@@ -22,20 +22,29 @@ Regress continuous VM **`cost`** from utilization, sizing, and categorical cloud
 | min_samples_leaf | 2 |
 | max_features | sqrt |
 | random_state | 42 |
+| oob_score | true |
 
-## Observed holdout metrics
+## Split & leakage controls
 
-From `artifacts/model_evaluation/metrics.json` (representative run):
+- Default `SPLIT_MODE=temporal` (time-ordered 80/20)
+- Excludes `cost`, `price_per_hour`, `cost_to_price_ratio`
+- Feature `target` = operational scale intent (not the label)
 
-| Metric | Value |
-|--------|-------|
-| MAE | ≈ 0.00115786 |
-| MSE | ≈ 3.31e-6 |
-| RMSE | ≈ 0.00181872 |
-| R² | ≈ 0.998964 |
+## Offline metrics (representative temporal holdout)
 
-> **Caveat:** ~1000-row synthetic dataset — metrics are optimistic and not proof of production accuracy.
+| Metric | Typical value |
+|--------|----------------|
+| MAE | ≈ 0.00126 |
+| RMSE | ≈ 0.00206 |
+| R² | ≈ 0.9987 |
+| gap_R2 (train−test) | ≈ 0.0009 |
+| Dummy-mean MAE lift | ≈ 0.05 |
+
+Packaging / CI floors: `r2_floor=0.90`, `mae_ceiling=0.05`.
+
+> **Caveat:** ~1000-row synthetic dataset — optimistic vs real cloud bills.
 
 ## Serving
 
-`PredictionPipeline` loads sealed bundle from CAS HEAD; Flask exposes `/api/predict`.
+`PredictionPipeline` loads sealed CAS HEAD (optional probe for canary/shadow).  
+Flask: `/api/predict`, `/api/predict/batch`, `/ops/model-card`.

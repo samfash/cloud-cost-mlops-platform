@@ -20,6 +20,7 @@ Engineering research portfolio (vision, architecture, ML, ADRs, gaps):
 | **Model lab** | REXX election API on **8081** (`/health`, `/ready`, `/metrics`, `/api/select`) |
 | **Observability** | JSON stdout logs, `X-Request-Id`, Prometheus metrics + alert rules; optional Grafana via `docker compose --profile obs` |
 | **Caching** | In-process predict cache (TTL/LRU); `cache_hit` on JSON responses |
+| **MLOps** | Temporal split, batch predict, drift OOB metrics, MLflow gaps/baseline, canary/shadow hooks, CI metrics gate |
 | **API guards** | Optional `API_KEY`; Compose default `RATE_LIMIT_PER_MINUTE=600` |
 
 ## Project layout
@@ -180,6 +181,8 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on push/PR:
 | GET | `/metrics` | Prometheus metrics |
 | POST | `/predict` | Form-encoded prediction → HTML |
 | POST | `/api/predict` | JSON prediction → `prediction` + `status` (+ additive fields) |
+| POST | `/api/predict/batch` | Batch JSON instances (≤500) |
+| GET | `/ops/model-card` | Offline metrics + serving posture |
 
 ### Model lab (`:8081`)
 

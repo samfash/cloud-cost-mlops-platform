@@ -18,6 +18,10 @@ services:
       - PREDICT_CACHE_ENABLED=${PREDICT_CACHE_ENABLED:-1}
       - PREDICT_CACHE_SIZE=${PREDICT_CACHE_SIZE:-1024}
       - PREDICT_CACHE_TTL_SECONDS=${PREDICT_CACHE_TTL_SECONDS:-300}
+      # primary | shadow | canary (+ CANARY_PERCENT when a CAS probe pin exists)
+      - SERVING_MODE=${SERVING_MODE:-primary}
+      - CANARY_PERCENT=${CANARY_PERCENT:-0}
+      - SPLIT_MODE=${SPLIT_MODE:-temporal}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/ready"]
       interval: 30s

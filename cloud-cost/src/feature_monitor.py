@@ -1,4 +1,4 @@
-"""Lightweight log-only feature range checks at predict time (drift signal)."""
+"""Feature range / drift signals at predict time (log + Prometheus)."""
 
 from __future__ import annotations
 
@@ -6,9 +6,23 @@ import json
 from pathlib import Path
 from typing import Any
 
+from prometheus_client import Counter
+
 from src.logging.logger import logging
 
-# Numeric features commonly present on the wire / after form submit.
+FEATURE_OOB = Counter(
+    "feature_out_of_band_total",
+    "Predict requests with at least one out-of-band feature",
+    ["service"],
+)
+FEATURE_OOB_FIELDS = Counter(
+    "feature_out_of_band_fields_total",
+    "Out-of-band feature observations by field",
+    ["service", "field"],
+)
+
+SERVICE = "cloud-cost-api"
+
 _NUMERIC_FIELDS = (
     "cpu_usage",
     "memory_usage",
@@ -23,7 +37,6 @@ _NUMERIC_FIELDS = (
 
 
 def _default_ranges() -> dict[str, tuple[float, float]]:
-    """Conservative operating bands derived from Cloud_Dataset scale."""
     return {
         "cpu_usage": (0.0, 100.0),
         "memory_usage": (0.0, 100.0),
@@ -38,7 +51,6 @@ def _default_ranges() -> dict[str, tuple[float, float]]:
 
 
 def load_training_ranges(dataset_csv: Path | None = None) -> dict[str, tuple[float, float]]:
-    """Optionally tighten bands from the training CSV percentiles (p01–p99)."""
     ranges = _default_ranges()
     if dataset_csv is None or not dataset_csv.is_file():
         return ranges
@@ -56,9 +68,28 @@ def load_training_ranges(dataset_csv: Path | None = None) -> dict[str, tuple[flo
             high = float(series.quantile(0.99))
             if high > low:
                 ranges[col] = (low, high)
-    except Exception as exc:  # pragma: no cover - best-effort
+    except Exception as exc:  # pragma: no cover
         logging.warning("feature monitor: failed to load training ranges: %s", exc)
     return ranges
+
+
+def population_stability_index(
+    expected: list[float], actual: list[float], bins: int = 10
+) -> float:
+    """Classic PSI between two 1-D samples (offline monitoring helper)."""
+    import numpy as np
+
+    if len(expected) < bins or len(actual) < bins:
+        return 0.0
+    quantiles = np.linspace(0, 1, bins + 1)
+    edges = np.unique(np.quantile(expected, quantiles))
+    if len(edges) < 3:
+        return 0.0
+    e_hist, _ = np.histogram(expected, bins=edges)
+    a_hist, _ = np.histogram(actual, bins=edges)
+    e_pct = np.clip(e_hist / max(e_hist.sum(), 1), 1e-4, None)
+    a_pct = np.clip(a_hist / max(a_hist.sum(), 1), 1e-4, None)
+    return float(np.sum((a_pct - e_pct) * np.log(a_pct / e_pct)))
 
 
 class FeatureMonitor:
@@ -66,7 +97,6 @@ class FeatureMonitor:
         self.ranges = ranges or _default_ranges()
 
     def check(self, payload: dict[str, Any]) -> list[str]:
-        """Return list of out-of-band feature names; also logs a JSON warning."""
         offenders: list[str] = []
         details: dict[str, Any] = {}
         for field in _NUMERIC_FIELDS:
@@ -82,7 +112,9 @@ class FeatureMonitor:
             if value < low or value > high:
                 offenders.append(field)
                 details[field] = {"value": value, "expected": [low, high]}
+                FEATURE_OOB_FIELDS.labels(service=SERVICE, field=field).inc()
         if offenders:
+            FEATURE_OOB.labels(service=SERVICE).inc()
             logging.warning(
                 "feature_out_of_band %s",
                 json.dumps({"offenders": offenders, "details": details}),

@@ -16,7 +16,9 @@ Last updated: 2026-08-10
 | GET | `/ready` | — | `200` when model loaded; `503` otherwise (orchestration probe) |
 | GET | `/metrics` | — | Prometheus text exposition |
 | POST | `/predict` | form-encoded | HTML results |
-| POST | `/api/predict` | JSON features | `prediction`, `status`, plus additive `model_version`, `request_id`, `latency_ms`, `cache_hit` |
+| POST | `/api/predict` | JSON features | `prediction`, `status`, plus additive `model_version`, `variant`, `request_id`, `latency_ms`, `cache_hit` |
+| POST | `/api/predict/batch` | `{"instances":[...]}` | per-row predictions (≤500) |
+| GET | `/ops/model-card` | — | Offline metrics + online serving posture |
 
 Notes:
 

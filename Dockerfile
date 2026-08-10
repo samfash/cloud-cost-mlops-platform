@@ -7,7 +7,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_DEFAULT_TIMEOUT=120 \
     PIP_RETRIES=15 \
-    LOG_LEVEL=INFO
+    LOG_LEVEL=INFO \
+    SPLIT_MODE=temporal \
+    SERVING_MODE=primary \
+    CANARY_PERCENT=0
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \

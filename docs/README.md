@@ -48,8 +48,10 @@ This tree separates **IMPLEMENTED NOW** from **PLANNED / GAP**.
 - **CAS store:** `HEAD`, `pins.json`, `RELEASES`, `catalog.sqlite`, `objects/`, `versions/`
 - **APIs:** Flask inference (`/`, `/estimate`, `/health`, `/ready`, `/metrics`, `/predict`, `/api/predict`) on **8080**; model_lab election on **8081**
 - **UI:** Corporate overview for non-technical users + estimate wizard
+- **MLOps:** temporal split, train/serve parity tests, batch predict, feature-schema snapshot, OOB drift metrics, MLflow params/gaps, canary/shadow hooks, CI metrics gate
 - **Ops:** Docker/Compose, CI, Prometheus/Grafana (`--profile obs`), prediction cache, default rate limits, optional `API_KEY`
-- **Holdout (observed):** MAE ≈ 0.00116, RMSE ≈ 0.00182, R² ≈ 0.999 — **caveat:** ~1000-row synthetic `Cloud_Dataset.csv`
+- **Holdout (temporal, observed):** MAE ≈ 0.00126, R² ≈ 0.9987 — **caveat:** ~1000-row synthetic `Cloud_Dataset.csv`
+- **Your checklist:** [USER_ACTIONS.md](USER_ACTIONS.md)
 
 ```mermaid
 flowchart LR
@@ -84,9 +86,9 @@ flowchart LR
 | 12 | Disaster recovery (CAS backup/restore + CI drill) | **Partial** — offsite/multi-AZ remain |
 | 13 | Real FinOps CUR/BigQuery billing ingestion | Gap |
 | 14 | AuthN/AuthZ, rate limiting, multi-tenant isolation | **Partial** — optional `API_KEY` + Compose default rate limit; no multi-tenant AuthZ |
-| 15 | Online feature store + train/serve skew monitors | **Partial** — predict-time range monitor (log-only) |
-| 16 | Model monitoring / drift detection | **Partial** — out-of-band feature warnings; no dashboard yet |
-| 17 | Multi-model serving (canary/shadow/A/B) | Gap |
+| 15 | Online feature store + train/serve skew monitors | **Partial** — local schema snapshot + parity tests; not Feast |
+| 16 | Model monitoring / drift detection | **Partial** — OOB Prometheus + alert; no online label residuals |
+| 17 | Multi-model serving (canary/shadow/A/B) | **Partial** — CAS probe + `SERVING_MODE`; needs dual pins in prod |
 | 18 | Kubernetes / HPA (Compose-only today) | Gap |
 | 19 | Formal threat-model residual-risk sign-off | **Partial** — draft + mitigations updated; formal sign-off open |
 | 20 | External papers / references curation completeness | Gap |

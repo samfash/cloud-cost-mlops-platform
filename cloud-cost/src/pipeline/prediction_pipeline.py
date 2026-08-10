@@ -41,12 +41,17 @@ def _binding_mac(seal_tag: str, digest_ring: str, publish_nonce: str) -> str:
 
 
 class PredictionPipeline:
-    def __init__(self):
+    def __init__(self, version: str | None = None):
         try:
             logging.info("Initiating prediction pipeline.")
-            head = (_BUNDLE_ROOT / "HEAD").read_text(encoding="utf-8").strip()
+            if version:
+                head = version.strip()
+            else:
+                head = (_BUNDLE_ROOT / "HEAD").read_text(encoding="utf-8").strip()
             self.bundle_dir = str(_BUNDLE_ROOT / "versions" / head)
             bundle = Path(self.bundle_dir)
+            if not bundle.is_dir():
+                raise RuntimeError(f"Model version not found: {head}")
 
             with (bundle / "manifest.json").open() as handle:
                 manifest = json.load(handle)

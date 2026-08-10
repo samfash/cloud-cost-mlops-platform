@@ -18,6 +18,7 @@ _OPEN_ENDPOINTS = frozenset(
         "metrics",
         "home",
         "overview",
+        "model_card",
         "static",
     }
 )

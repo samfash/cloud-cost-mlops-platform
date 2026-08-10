@@ -11,14 +11,15 @@ Last updated: 2026-08-10
 - Validation stage writes status
 - Output validators (CSV has `cost`, pickle loadable, metrics keys present)
 - Packaging refuses missing metric keys / floor-ceiling breaches
-- **Predict-time feature range monitor** (`cloud-cost/src/feature_monitor.py`)
-  - Compares numeric inputs to training CSV p01–p99 bands (fallback defaults)
-  - Log-only warnings (`feature_out_of_band`); does not reject traffic
+- Leakage exclusions (`cost`, `price_per_hour`, `cost_to_price_ratio`)
+- Temporal holdout by default (`SPLIT_MODE=temporal`)
+- Predict-time feature range monitor → logs + Prometheus (`feature_out_of_band_*`)
+- Offline PSI helper for batch jobs (`population_stability_index`)
 
 ## Missing
 
 - Great Expectations / Deequ suites
-- Full PSI dashboards / alerting on drift volume
+- Online residual monitoring vs realized invoices
 - PII classification (synthetic today)
 
-> Remaining: promote out-of-band rate into a Prometheus gauge and ticket alert.
+> Remaining: wire OOB rate into on-call (Alertmanager) and add label-feedback DQ.

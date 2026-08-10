@@ -6,26 +6,22 @@ Last updated: 2026-08-10
 
 # CI/CD
 
-## Implemented (CI)
+## Implemented (CI + ML gates)
 
 GitHub Actions (`.github/workflows/ci.yml`):
 
-1. Unit tests (including optional API guards)
-2. Train + package smoke
-3. CAS backup/restore drill
-4. Model-lab CLI submission
-5. Integration tests (`/ready`, `/metrics`, `/api/predict`, model-lab select)
-6. Docker image build
-7. `docker compose` smoke (ready + predict + select)
-8. Observability profile smoke (Prometheus alert rules loaded)
-9. Trivy image scan (informational; `exit-code: 0`)
-10. Ruff lint
+1. Unit tests (guards, cache, train/serve parity, …)
+2. Train + package with `SPLIT_MODE=temporal`
+3. **ML metrics gate** (`scripts/check_metrics_gate.py`)
+4. CAS backup/restore drill
+5. Model-lab CLI submission
+6. Integration tests (predict, batch, model-card, select)
+7. Docker image build + compose smoke (+ Prometheus rules)
+8. Trivy image scan (informational)
+9. Ruff lint
 
 ## Still open (GAP)
 
-> **GAP:** No CD (image publish to GHCR/ECR), no hard SBOM gate, no staging environment.
+> **GAP:** No CD (GHCR/ECR publish), no staging deploy, Trivy not failing the build yet.
 >
-> Next actions:
-> 1. Publish `ghcr.io/<org>/cloud-cost-api` on main
-> 2. Fail CI on CRITICAL Trivy findings once baseline is clean
-> 3. Deploy-to-staging job after smoke
+> See [USER_ACTIONS.md](../../USER_ACTIONS.md) for registry/secrets steps.

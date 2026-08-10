@@ -30,6 +30,7 @@ model_packager:
   r2_minor_bump_threshold: 0.05
   r2_major_bump_threshold: 0.15
   mae_regression_tolerance: 0.05
-  r2_floor: 0.0
-  mae_ceiling: 1.0e9
+  # Honest gates for the synthetic ~1k-row dataset (still optimistic vs real bills).
+  r2_floor: 0.90
+  mae_ceiling: 0.05
   allow_nonimproving_patch: true
