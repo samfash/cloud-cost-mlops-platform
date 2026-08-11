@@ -77,8 +77,9 @@ RUN if [ "$SKIP_MODEL_LAB_BUILD" = "1" ] || [ "$RENDER_SLIM_BUILD" = "1" ]; then
 
 EXPOSE 8080 8081
 
+# Docker HEALTHCHECK uses CMD (not CMD-SHELL). Render also probes healthCheckPath=/ready.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
-  CMD-SHELL curl -fsS "http://127.0.0.1:${PORT:-8080}/ready" || exit 1
+  CMD curl -fsS http://127.0.0.1:8080/ready || exit 1
 
 WORKDIR /app/cloud-cost
 ENTRYPOINT ["/usr/bin/tini", "--", "/app/scripts/entrypoint.sh"]
