@@ -17,7 +17,7 @@ These items cannot be finished by code alone. Use this as a checklist.
 Short version:
 
 1. Render account + connect GitHub repo `cloud-cost-mlops-platform`.
-2. Deploy Docker Web Service / Blueprint (`render.yaml`) — plan **Starter** recommended (Free may time out on train-at-build).
+2. Deploy Docker Web Service / Blueprint (`render.yaml`) — plan **Free** first (sleeps when idle; upgrade to Starter later in Dashboard if you like it).
 3. Generate and set **`API_KEY`** in Render Environment (required for public URL).
 4. Confirm `/ready`, UI `/` + `/estimate`, and authenticated `/api/predict` + `/api/predict/latency`.
 5. Accept v1 limits: ephemeral disk, single instance, synthetic training data, no model-lab service on Render.

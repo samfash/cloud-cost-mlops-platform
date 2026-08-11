@@ -45,13 +45,13 @@ The Dockerfile **trains and packages models during image build**. That makes the
 
 | Plan | Notes for v1 |
 |------|----------------|
-| **Free** | Possible but risky: cold starts after idle, build timeouts more common, service sleeps. Fine for a private demo if build succeeds. |
-| **Starter** (recommended in `render.yaml`) | Always-on-ish web service, more reliable builds; still a single instance. |
+| **Free** (default in `render.yaml`) | Zero cost to try. Service **sleeps** when idle → first request after sleep is slow (cold start). Build timeouts more common on the long train-at-build Dockerfile. |
+| **Starter** | Upgrade anytime in Dashboard if Free is too slow/flaky. More reliable builds; less aggressive sleeping. Still a single instance. |
 | Higher | Only if you need more RAM/CPU for larger future models. |
 
-**You must decide and provide:** which plan to bill (card on file for paid plans).
+**Default path:** deploy on **Free** first. If you like the app and hit sleep/timeouts, upgrade to Starter in **Dashboard → your service → Settings → Plan** (no need to re-Blueprint). Card on file is required only when you upgrade.
 
-If Free build times out: switch to Starter, or later change the pipeline to bake artifacts in CI and `COPY` them (not required for v1 if Starter works).
+If Free **build** times out before the first deploy ever succeeds: upgrade to Starter and redeploy, or later bake artifacts in CI and `COPY` them (not required if Free build finishes).
 
 ---
 
@@ -105,7 +105,7 @@ If you leave `API_KEY` empty, the API is **world-writable** for predict — do n
 1. Push `main` with `render.yaml` (done when this guide ships).
 2. Render Dashboard → **New** → **Blueprint**.
 3. Connect GitHub → select **`cloud-cost-mlops-platform`**.
-4. Confirm service **`cloud-cost-api`**, plan **Starter** (or Free if you accept risk).
+4. Confirm service **`cloud-cost-api`**, plan **Free** (upgrade to Starter later if you want).
 5. When prompted for **`API_KEY`**, paste your generated secret.
 6. Apply / create. Wait for **Docker build** (train + package) then deploy.
 7. Copy the public URL, e.g. `https://cloud-cost-api.onrender.com`.
@@ -175,7 +175,7 @@ Expect: `"status":"success"`, `latency_model_loaded: true` on `/ready` or `/heal
 ## 7. Checklist summary (print this)
 
 - [ ] GitHub repo connected to Render  
-- [ ] Plan chosen (Starter recommended)  
+- [ ] Plan **Free** for first deploy (upgrade to Starter later if needed)  
 - [ ] Generated and stored **`API_KEY`**  
 - [ ] Set `API_KEY` in Render Environment  
 - [ ] Deploy finished green; `/ready` returns `ready: true`  
