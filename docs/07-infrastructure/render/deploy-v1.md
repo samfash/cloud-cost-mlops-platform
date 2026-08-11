@@ -186,6 +186,17 @@ Expect: `"status":"success"`, `latency_model_loaded: true` on `/ready` or `/heal
 
 ---
 
-## 8. Rollback
+## 8. If Blueprint shows **deploy failed**
+
+1. Open the Blueprint → click the failed **`cloud-cost-api`** event (or the service → **Logs** / **Events**).
+2. Expand the red deploy and copy the **last ~30 lines** of the build/runtime log (that text is the real error).
+3. Common causes on **Free (512 MB)**:
+   - **Out of memory** during `pip` / `python main.py` / Gunicorn start → message often `Killed` or `exit code 137`.
+   - **Build timeout** / pipeline minutes exhausted.
+   - **Health check** `/ready` never becomes 200 (process crash on boot).
+4. This repo’s `render.yaml` enables a **slim Free build** (`RENDER_SLIM_BUILD=1`: fewer RF trees, skip model_lab bake, skip pytest). After that commit is synced, use **Manual Sync** on the Blueprint and redeploy.
+5. If slim Free still fails: upgrade the service to **Starter** (Settings → Plan) and redeploy — same Dockerfile, more CPU headroom for the build.
+
+## 9. Rollback
 
 Render Dashboard → service → **Deploys** → redeploy previous successful deploy. No DB migration in v1.

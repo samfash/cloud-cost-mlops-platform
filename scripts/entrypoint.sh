@@ -23,13 +23,24 @@ seed_artifacts() {
   fi
 }
 
+drop_to_appuser() {
+  if command -v runuser >/dev/null 2>&1; then
+    exec runuser -u appuser -- "$@"
+  fi
+  if command -v setpriv >/dev/null 2>&1; then
+    exec setpriv --reuid=appuser --regid=appuser --init-groups -- "$@"
+  fi
+  # Last resort (some slim images).
+  exec su -s /bin/bash appuser -c 'exec "$@"' -- "$@"
+}
+
 seed_artifacts
 
 # When started as root (default image), ensure volume ownership then drop privileges.
 if [[ "$(id -u)" -eq 0 ]]; then
   mkdir -p artifacts logs
   chown -R appuser:appuser artifacts logs /app/model_lab/submission 2>/dev/null || true
-  exec runuser -u appuser -- "$@"
+  drop_to_appuser "$@"
 fi
 
 exec "$@"

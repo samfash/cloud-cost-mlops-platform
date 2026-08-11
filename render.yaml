@@ -1,19 +1,16 @@
-# Render Blueprint — v1 cloud-cost inference API
-# Dashboard: New → Blueprint → connect this repo, or create a Docker Web Service manually.
+# Render Blueprint — v1 cloud-cost inference API (Free-first)
 # Docs: docs/07-infrastructure/render/deploy-v1.md
+#
+# Free = 512MB RAM. Env vars below are also passed as Docker build-args.
 services:
   - type: web
     name: cloud-cost-api
     runtime: docker
-    # Start on Free; upgrade to Starter later in Dashboard → Settings → Plan
-    # (no Blueprint change required). Free sleeps when idle → cold starts.
     plan: free
     region: oregon
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /ready
-    # First Docker build trains + packages models — can take 10–25+ minutes.
-    # If Free build times out: Dashboard → upgrade to Starter and redeploy.
     envVars:
       - key: PYTHONPATH
         value: /app:/app/cloud-cost
@@ -30,7 +27,7 @@ services:
       - key: PREDICT_CACHE_ENABLED
         value: "1"
       - key: PREDICT_CACHE_SIZE
-        value: "1024"
+        value: "256"
       - key: PREDICT_CACHE_TTL_SECONDS
         value: "300"
       - key: ASYNC_JOBS_ENABLED
@@ -40,7 +37,19 @@ services:
       - key: AUDIT_LOG_PATH
         value: /tmp/predict_audit.db
       - key: RATE_LIMIT_PER_MINUTE
-        value: "120"
-      # Set in Render Dashboard → Environment (do not commit the real value).
+        value: "60"
+      - key: GUNICORN_THREADS
+        value: "2"
+      # Slim build for Free: less RAM/time (also injected as Docker build-args).
+      - key: RENDER_SLIM_BUILD
+        value: "1"
+      - key: SKIP_MODEL_LAB_BUILD
+        value: "1"
+      - key: INSTALL_PYTEST
+        value: "0"
+      - key: RF_N_JOBS
+        value: "1"
+      - key: RF_N_ESTIMATORS
+        value: "80"
       - key: API_KEY
         sync: false

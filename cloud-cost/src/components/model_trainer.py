@@ -25,15 +25,28 @@ def _regression_bundle(y_true, y_pred) -> dict:
     return {"MAE": mae, "MSE": mse, "RMSE": rmse, "R2": r2}
 
 
+def _rf_n_jobs() -> int:
+    raw = os.environ.get("RF_N_JOBS", "-1").strip()
+    try:
+        return int(raw)
+    except ValueError:
+        return -1
+
+
 def _rf_from_params(params) -> RandomForestRegressor:
+    n_estimators = int(params["n_estimators"])
+    # Slim hosts (e.g. Render Free 512MB) can override tree count to fit memory.
+    override = os.environ.get("RF_N_ESTIMATORS", "").strip()
+    if override.isdigit():
+        n_estimators = int(override)
     return RandomForestRegressor(
-        n_estimators=params["n_estimators"],
+        n_estimators=n_estimators,
         max_depth=params["max_depth"],
         min_samples_split=params["min_samples_split"],
         min_samples_leaf=params["min_samples_leaf"],
         max_features=params["max_features"],
         random_state=params["random_state"],
-        n_jobs=-1,
+        n_jobs=_rf_n_jobs(),
         oob_score=True,
         bootstrap=True,
     )
