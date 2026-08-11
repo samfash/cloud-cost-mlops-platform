@@ -318,6 +318,24 @@ a:hover { text-decoration: underline; }
   color: var(--ink-soft);
 }
 
+.field .hint,
+.step-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--ink-soft);
+  opacity: 0.9;
+}
+
+.step-hint {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--ink-soft);
+  opacity: 1;
+}
+
 .field input,
 .field select {
   width: 100%;
@@ -327,6 +345,10 @@ a:hover { text-decoration: underline; }
   font: inherit;
   background: var(--white);
   color: var(--ink);
+}
+
+.field input::placeholder {
+  color: rgba(49, 68, 92, 0.55);
 }
 
 .field input:focus,

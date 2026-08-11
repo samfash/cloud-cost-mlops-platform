@@ -63,7 +63,7 @@ Set these in **Render Dashboard → your service → Environment** (Blueprint ma
 
 | Variable | You provide | Guidance |
 |----------|-------------|----------|
-| **`API_KEY`** | Yes — generate yourself | Long random string (e.g. `openssl rand -hex 32`). Clients send `X-API-Key: <value>` or `Authorization: Bearer <value>`. **UI pages `/` and `/estimate` stay open** without the key; JSON predict routes require it when set. |
+| **`API_KEY`** | Yes — generate yourself | Long random string (e.g. `openssl rand -hex 32`). Clients send `X-API-Key: <value>` or `Authorization: Bearer <value>`. **Browser UI** (`/`, `/estimate`, form `POST /predict`) stays open without the key; JSON `/api/*` routes require it when set. |
 
 If you leave `API_KEY` empty, the API is **world-writable** for predict — do not do that on a public URL.
 

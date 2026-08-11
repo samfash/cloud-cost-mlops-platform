@@ -29,6 +29,10 @@ def guarded_app(monkeypatch):
     def ready():
         return jsonify({"ready": True})
 
+    @app.post("/predict")
+    def predict():
+        return jsonify({"status": "success"})
+
     @app.post("/api/predict")
     def api_predict():
         return jsonify({"status": "success"})
@@ -49,6 +53,8 @@ def test_api_key_protects_predict_not_ready(monkeypatch, guarded_app):
     # Re-register is unnecessary; guards read env at request time.
     client = guarded_app.test_client()
     assert client.get("/ready").status_code == 200
+    # Browser estimate form must stay usable without a key.
+    assert client.post("/predict").status_code == 200
     denied = client.post("/api/predict")
     assert denied.status_code == 401
     ok = client.post("/api/predict", headers={"X-API-Key": "secret-token"})

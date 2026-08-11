@@ -11,6 +11,8 @@ from typing import Deque
 from flask import Flask, jsonify, request
 
 # Endpoints that stay open for probes / browsers even when API_KEY is set.
+# HTML form POST /predict stays open so the estimate UI works on public hosts;
+# JSON /api/* routes still require the key when configured.
 _OPEN_ENDPOINTS = frozenset(
     {
         "health",
@@ -18,6 +20,7 @@ _OPEN_ENDPOINTS = frozenset(
         "metrics",
         "home",
         "overview",
+        "predict",
         "model_card",
         "static",
     }
