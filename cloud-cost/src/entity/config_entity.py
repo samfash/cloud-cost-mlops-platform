@@ -55,3 +55,7 @@ class ModelPackagerConfig:
     r2_floor: float
     mae_ceiling: float
     allow_nonimproving_patch: bool
+    # Optional latency-model artifacts (same CAS publish; separate eval suite).
+    latency_model_path: Path | None = None
+    latency_feature_schema_path: Path | None = None
+    latency_metrics_path: Path | None = None

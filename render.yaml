@@ -1,0 +1,44 @@
+# Render Blueprint — v1 cloud-cost inference API
+# Dashboard: New → Blueprint → connect this repo, or create a Docker Web Service manually.
+# Docs: docs/07-infrastructure/render/deploy-v1.md
+services:
+  - type: web
+    name: cloud-cost-api
+    runtime: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /ready
+    # First Docker build trains + packages models — allow a long first deploy.
+    # If build times out on Free, upgrade plan or use a pre-built image registry later.
+    envVars:
+      - key: PYTHONPATH
+        value: /app:/app/cloud-cost
+      - key: LOG_LEVEL
+        value: INFO
+      - key: SPLIT_MODE
+        value: temporal
+      - key: SERVING_MODE
+        value: primary
+      - key: CANARY_PERCENT
+        value: "0"
+      - key: LATENCY_MODEL_ENABLED
+        value: "1"
+      - key: PREDICT_CACHE_ENABLED
+        value: "1"
+      - key: PREDICT_CACHE_SIZE
+        value: "1024"
+      - key: PREDICT_CACHE_TTL_SECONDS
+        value: "300"
+      - key: ASYNC_JOBS_ENABLED
+        value: "1"
+      - key: AUDIT_LOG_ENABLED
+        value: "1"
+      - key: AUDIT_LOG_PATH
+        value: /tmp/predict_audit.db
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "120"
+      # Set in Render Dashboard → Environment (do not commit the real value).
+      - key: API_KEY
+        sync: false

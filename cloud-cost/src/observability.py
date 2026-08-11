@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import time
 import uuid
 from collections.abc import Callable
@@ -43,10 +44,20 @@ MODEL_LOADED = Gauge(
     "1 if prediction model is loaded, else 0",
     ["service"],
 )
+LATENCY_MODEL_LOADED = Gauge(
+    "latency_model_loaded",
+    "1 if latency prediction model is loaded, else 0",
+    ["service"],
+)
 PREDICT_ERRORS = Counter(
     "predict_errors_total",
     "Prediction errors by class",
     ["service", "error_class"],
+)
+LATENCY_PREDICT_REQUESTS = Counter(
+    "latency_predict_requests_total",
+    "Latency prediction attempts",
+    ["service", "outcome"],
 )
 
 
@@ -61,11 +72,19 @@ def set_model_loaded(loaded: bool) -> None:
     MODEL_LOADED.labels(service=SERVICE_NAME).set(1 if loaded else 0)
 
 
+def set_latency_model_loaded(loaded: bool) -> None:
+    LATENCY_MODEL_LOADED.labels(service=SERVICE_NAME).set(1 if loaded else 0)
+
+
 def observe_predict(outcome: str, latency_s: float, error_class: str | None = None) -> None:
     PREDICT_REQUESTS.labels(service=SERVICE_NAME, outcome=outcome).inc()
     PREDICT_LATENCY.labels(service=SERVICE_NAME).observe(latency_s)
     if error_class:
         PREDICT_ERRORS.labels(service=SERVICE_NAME, error_class=error_class).inc()
+
+
+def observe_latency_predict(outcome: str) -> None:
+    LATENCY_PREDICT_REQUESTS.labels(service=SERVICE_NAME, outcome=outcome).inc()
 
 
 def register_request_middleware(app: Flask, *, service: str = SERVICE_NAME) -> None:
@@ -113,8 +132,17 @@ def metrics_response() -> tuple[bytes, int, dict[str, str]]:
     return generate_latest(REGISTRY), 200, {"Content-Type": CONTENT_TYPE_LATEST}
 
 
-def required_predict_fields() -> tuple[str, ...]:
-    return (
+def _latency_optional_by_default() -> bool:
+    return os.environ.get("LATENCY_MODEL_ENABLED", "1").strip().lower() not in {
+        "0",
+        "false",
+        "off",
+        "no",
+    }
+
+
+def required_predict_fields(*, require_latency_ms: bool = True) -> tuple[str, ...]:
+    fields = [
         "cpu_usage",
         "memory_usage",
         "net_io",
@@ -125,25 +153,46 @@ def required_predict_fields() -> tuple[str, ...]:
         "vCPU",
         "RAM_GB",
         "target",
-        "latency_ms",
         "throughput",
         "utilization",
-    )
+    ]
+    if require_latency_ms:
+        fields.insert(fields.index("throughput"), "latency_ms")
+    return tuple(fields)
 
 
-def validate_predict_payload(data: Any) -> str | None:
-    """Return an error message if payload is invalid, else None."""
+def validate_predict_payload(
+    data: Any, *, require_latency_ms: bool | None = None
+) -> str | None:
+    """Return an error message if payload is invalid, else None.
+
+    When ``LATENCY_MODEL_ENABLED`` and the latency model is available, callers
+    may pass ``require_latency_ms=False`` so the server fills ``latency_ms``.
+    """
     if data is None:
         return "Request body must be a JSON object"
     if not isinstance(data, dict):
         return "Request body must be a JSON object"
-    missing = [field for field in required_predict_fields() if field not in data]
+    if require_latency_ms is None:
+        # Soft default: latency_ms still preferred, but omission is allowed when
+        # the latency model is enabled (server fills before cost scoring).
+        require_latency_ms = not _latency_optional_by_default()
+    missing = [
+        field
+        for field in required_predict_fields(require_latency_ms=require_latency_ms)
+        if field not in data
+    ]
     if missing:
         return f"Missing required fields: {', '.join(missing)}"
     temporal = ("hour", "day", "month", "day_of_week", "is_weekend")
     if "timestamp" not in data and not all(key in data for key in temporal):
         return "Provide 'timestamp' or temporal fields hour/day/month/day_of_week/is_weekend"
     return None
+
+
+def validate_latency_payload(data: Any) -> str | None:
+    """Latency endpoint never accepts latency_ms as a required input."""
+    return validate_predict_payload(data, require_latency_ms=False)
 
 
 def timed(fn: Callable[[], Any]) -> tuple[Any, float]:

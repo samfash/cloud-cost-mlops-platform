@@ -2,6 +2,7 @@
 import hashlib
 import hmac
 import json
+import os
 import pickle
 import sys
 from pathlib import Path
@@ -38,6 +39,15 @@ def _binding_mac(seal_tag: str, digest_ring: str, publish_nonce: str) -> str:
     return hmac.new(
         key, f"{seal_tag}|{digest_ring}".encode(), hashlib.sha256
     ).hexdigest()
+
+
+def latency_model_enabled() -> bool:
+    return os.environ.get("LATENCY_MODEL_ENABLED", "1").strip().lower() not in {
+        "0",
+        "false",
+        "off",
+        "no",
+    }
 
 
 class PredictionPipeline:
@@ -95,15 +105,52 @@ class PredictionPipeline:
             with resolved["metrics.json"].open() as handle:
                 self.metrics = json.load(handle)
 
+            self.latency_model = None
+            self.latency_feature_columns: list[str] | None = None
+            self.latency_metrics: dict | None = None
+            if "latency_model.pkl" in resolved and "latency_feature_columns.json" in resolved:
+                with resolved["latency_model.pkl"].open("rb") as handle:
+                    self.latency_model = pickle.load(handle)
+                with resolved["latency_feature_columns.json"].open() as handle:
+                    lat_schema = json.load(handle)
+                self.latency_feature_columns = list(lat_schema["feature_order"])
+                if "latency_metrics.json" in resolved:
+                    with resolved["latency_metrics.json"].open() as handle:
+                        self.latency_metrics = json.load(handle)
+                logging.info(
+                    "Latency model loaded (%d features).",
+                    len(self.latency_feature_columns),
+                )
+            else:
+                logging.warning("Latency model blobs absent from CAS version %s", head)
+
             logging.info("Prediction pipeline initialized successfully.")
         except Exception as e:
             raise CustomException(e, sys) from e
+
+    @property
+    def has_latency_model(self) -> bool:
+        return (
+            latency_model_enabled()
+            and self.latency_model is not None
+            and self.latency_feature_columns is not None
+        )
 
     def predict(self, input_data: pd.DataFrame):
         try:
             if self.feature_columns is not None:
                 input_data = input_data.reindex(columns=self.feature_columns)
             return self.model.predict(input_data)
+        except Exception as e:
+            raise CustomException(e, sys) from e
+
+    def predict_latency(self, input_data: pd.DataFrame) -> float:
+        try:
+            if not self.has_latency_model:
+                raise RuntimeError("Latency model not available")
+            assert self.latency_feature_columns is not None
+            frame = input_data.reindex(columns=self.latency_feature_columns)
+            return float(self.latency_model.predict(frame)[0])
         except Exception as e:
             raise CustomException(e, sys) from e
 
@@ -149,5 +196,52 @@ class CustomData:
 
             df = encode_categorical_columns(df, self.label_encoders, CATEGORICAL_COLUMNS)
             return add_engineered_features(df)
+        except Exception as e:
+            raise CustomException(e, sys) from e
+
+
+class LatencyCustomData:
+    """Feature frame for latency prediction (no latency_ms / ratio leakage)."""
+
+    NUMERIC_COLUMNS: ClassVar[list[str]] = [
+        "cpu_usage",
+        "memory_usage",
+        "net_io",
+        "disk_io",
+        "RAM_GB",
+        "throughput",
+        "utilization",
+    ]
+    INTEGER_COLUMNS: ClassVar[list[str]] = ["vCPU"]
+    TEMPORAL_COLUMNS: ClassVar[list[str]] = [
+        "hour",
+        "day",
+        "month",
+        "day_of_week",
+        "is_weekend",
+    ]
+
+    def __init__(self, data: dict, label_encoders: dict | None = None):
+        self.data = data
+        self.label_encoders = label_encoders
+
+    def get_data_as_dataframe(self) -> pd.DataFrame:
+        try:
+            payload = {k: v for k, v in self.data.items() if k != "latency_ms"}
+            df = pd.DataFrame([payload])
+
+            for col in self.NUMERIC_COLUMNS:
+                df[col] = pd.to_numeric(df[col])
+            for col in self.INTEGER_COLUMNS:
+                df[col] = pd.to_numeric(df[col]).astype(int)
+
+            if "timestamp" in df.columns:
+                df = add_temporal_features(df, timestamp_col="timestamp")
+            else:
+                for col in self.TEMPORAL_COLUMNS:
+                    df[col] = pd.to_numeric(df[col]).astype(int)
+
+            df = encode_categorical_columns(df, self.label_encoders, CATEGORICAL_COLUMNS)
+            return add_engineered_features(df, include_latency_ratio=False)
         except Exception as e:
             raise CustomException(e, sys) from e

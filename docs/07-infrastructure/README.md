@@ -10,6 +10,7 @@ Compose + Gunicorn + GitHub Actions are production-leaning. Structured logs, `/r
 
 ## Contents
 
+- [Render deploy v1](render/deploy-v1.md) — **operator checklist** (secrets, plan, verification)
 - [Deployment](deployment/deployment.md) — Compose, Gunicorn, non-root drop, resource limits
 - [CI/CD](ci-cd/ci-cd.md) — GHA unit/integration/docker compose + obs smoke + Trivy
 - [Observability](observability/observability.md) — metrics, request ids, Grafana dashboard

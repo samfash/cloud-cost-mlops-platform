@@ -56,6 +56,7 @@ def test_model_card(client):
     resp = client.get("/ops/model-card")
     assert resp.status_code == 200
     data = resp.get_json()
-    assert data["task"] == "regression"
+    assert data["task"] == "multi_regression"
+    assert "latency_ms" in data.get("labels", [])
     assert data["precision_recall_applicable"] is False
     assert "offline_metrics" in data

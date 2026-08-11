@@ -87,4 +87,9 @@ class ConfigurationManager:
             r2_floor=float(config.r2_floor),
             mae_ceiling=float(config.mae_ceiling),
             allow_nonimproving_patch=bool(config.allow_nonimproving_patch),
+            latency_model_path=getattr(config, "latency_model_path", None),
+            latency_feature_schema_path=getattr(
+                config, "latency_feature_schema_path", None
+            ),
+            latency_metrics_path=getattr(config, "latency_metrics_path", None),
         )

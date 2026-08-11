@@ -9,12 +9,15 @@ services:
       - "8080:8080"
     volumes:
       - model-artifacts:/app/cloud-cost/artifacts
+    env_file:
+      - path: .env
+        required: false
     environment:
       - PYTHONPATH=/app:/app/cloud-cost
-      - LOG_LEVEL=INFO
-      # Optional API_KEY (empty = open). Generous default rate limit; set 0 to disable.
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      # Optional API_KEY (empty = open). Public hosts: set API_KEY + lower rate limit.
       - API_KEY=${API_KEY:-}
-      - RATE_LIMIT_PER_MINUTE=${RATE_LIMIT_PER_MINUTE:-600}
+      - RATE_LIMIT_PER_MINUTE=${RATE_LIMIT_PER_MINUTE:-120}
       - PREDICT_CACHE_ENABLED=${PREDICT_CACHE_ENABLED:-1}
       - PREDICT_CACHE_SIZE=${PREDICT_CACHE_SIZE:-1024}
       - PREDICT_CACHE_TTL_SECONDS=${PREDICT_CACHE_TTL_SECONDS:-300}
@@ -22,6 +25,9 @@ services:
       - SERVING_MODE=${SERVING_MODE:-primary}
       - CANARY_PERCENT=${CANARY_PERCENT:-0}
       - SPLIT_MODE=${SPLIT_MODE:-temporal}
+      - LATENCY_MODEL_ENABLED=${LATENCY_MODEL_ENABLED:-1}
+      - AUDIT_LOG_ENABLED=${AUDIT_LOG_ENABLED:-1}
+      - ASYNC_JOBS_ENABLED=${ASYNC_JOBS_ENABLED:-1}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/ready"]
       interval: 30s

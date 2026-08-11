@@ -10,7 +10,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     LOG_LEVEL=INFO \
     SPLIT_MODE=temporal \
     SERVING_MODE=primary \
-    CANARY_PERCENT=0
+    CANARY_PERCENT=0 \
+    LATENCY_MODEL_ENABLED=1 \
+    PREDICT_CACHE_ENABLED=1 \
+    ASYNC_JOBS_ENABLED=1 \
+    AUDIT_LOG_ENABLED=1
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -52,23 +56,10 @@ RUN python -m model_lab.cli \
 EXPOSE 8080 8081
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-  CMD curl -fsS http://127.0.0.1:8080/ready || exit 1
+  CMD-SHELL curl -fsS "http://127.0.0.1:${PORT:-8080}/ready" || exit 1
 
 # Entrypoint seeds volumes / fixes ownership as root, then drops to appuser.
+# start_api.sh binds to $PORT (Render) or 8080 locally.
 WORKDIR /app/cloud-cost
 ENTRYPOINT ["/usr/bin/tini", "--", "/app/scripts/entrypoint.sh"]
-CMD [ \
-  "gunicorn", \
-  "--bind", "0.0.0.0:8080", \
-  "--workers", "1", \
-  "--threads", "8", \
-  "--timeout", "60", \
-  "--graceful-timeout", "30", \
-  "--keep-alive", "5", \
-  "--max-requests", "1000", \
-  "--max-requests-jitter", "100", \
-  "--access-logfile", "-", \
-  "--error-logfile", "-", \
-  "--capture-output", \
-  "app:app" \
-]
+CMD ["/app/scripts/start_api.sh"]

@@ -45,7 +45,9 @@ Under the held LOCK_EX, after gate acceptance assigns a version, the successful 
 
 ## Blobs
 
-Logical names: model.pkl, label_encoders.pkl, metrics.json, feature_columns.json.
+Required logical names: model.pkl, label_encoders.pkl, metrics.json, feature_columns.json.
+
+Optional latency adjuncts (same version; not cost-gated): latency_model.pkl, latency_feature_columns.json, latency_metrics.json.
 
 model.pkl, label_encoders.pkl, and metrics.json must match the configured training/evaluation files byte-for-byte. feature_columns.json carries training feature_order, n_features equal to len(feature_order), and model_version set to the newly assigned version before the bytes are hashed into the object store.
 
@@ -57,7 +59,7 @@ parent_version is null on 1.0.0 / bootstrap, otherwise the previous highest publ
 created_at is UTC ending in Z (example 2024-06-01T12:00:00.000000Z; +00:00 is invalid) and must be strictly greater than the parent's created_at when a parent exists.
 blobs maps each logical name to {"sha256":"...","size":...}.
 publish_nonce is secrets.token_hex(8) (sixteen lowercase hex characters) for each successful publish.
-digest_ring is the lowercase hex of hashlib.blake2b(data, digest_size=32, person=b"mpip-ring").digest() where data is struct.pack(">I", bundle_epoch) followed by the four raw 32-byte digests of model.pkl, metrics.json, label_encoders.pkl, and feature_columns.json in that descending filename order.
+digest_ring is the lowercase hex of hashlib.blake2b(data, digest_size=32, person=b"mpip-ring").digest() where data is struct.pack(">I", bundle_epoch) followed by the four raw 32-byte digests of model.pkl, metrics.json, label_encoders.pkl, and feature_columns.json in that descending filename order. Optional latency blobs are listed in manifest.blobs but are excluded from digest_ring so the cost seal stays stable.
 lineage_token is the lowercase hex SHA-256 of the UTF-8 string {parent_version or "ROOT"}|{model_version}|{digest_ring}.
 seal_tag is the lowercase hex of hashlib.blake2b(lineage_token.encode(), digest_size=16, person=b"mpip-seal").digest().
 binding_mac is the lowercase hex of hmac.new(key, msg, hashlib.sha256).digest() where key = hashlib.blake2b(publish_nonce.encode(), digest_size=16, person=b"mpip-mac").digest() and msg = f"{seal_tag}|{digest_ring}".encode().

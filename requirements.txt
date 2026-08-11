@@ -12,3 +12,4 @@ ensure==1.0.4
 python-box==7.4.1
 gunicorn==23.0.0
 prometheus-client==0.22.1
+python-dotenv==1.1.1

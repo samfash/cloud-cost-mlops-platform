@@ -45,9 +45,14 @@ docker-compose.yml
 
 - [Docker Desktop](https://docs.docker.com/get-docker/) (daemon running) and Docker Compose v2
 
-### Build and start the APIs
+### Deploy v1 on Render
+
+See **[docs/07-infrastructure/render/deploy-v1.md](docs/07-infrastructure/render/deploy-v1.md)** for everything you must provide (account, plan, `API_KEY`, verification curls). Blueprint: [`render.yaml`](render.yaml).
+
+### Build and start the APIs (local)
 
 ```bash
+cp .env.example .env   # set API_KEY for any public URL
 docker compose up --build -d
 ```
 

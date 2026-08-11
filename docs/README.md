@@ -74,7 +74,7 @@ flowchart LR
 |---|------|--------|
 | 1 | LLM token / request pricing intelligence | Deferred |
 | 2 | Tokenization / prompt→token estimators | Deferred |
-| 3 | Latency-prediction model (beyond feature `latency_ms`) | Gap |
+| 3 | Latency-prediction model (beyond feature `latency_ms`) | **Implemented** — RF + CAS adjunct + `/api/predict/latency` |
 | 4 | Quality / usefulness prediction (LLM) | Deferred |
 | 5 | Recommendation engine (VM / region routing) | Gap |
 | 6 | Prompt optimization loop | Deferred |

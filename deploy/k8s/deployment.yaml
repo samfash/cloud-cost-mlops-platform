@@ -1,0 +1,102 @@
+# Minimal Kubernetes sketch for the inference API (monolith image).
+# Apply after pushing the image to a registry your cluster can pull.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloud-cost-api
+  labels:
+    app: cloud-cost-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cloud-cost-api
+  template:
+    metadata:
+      labels:
+        app: cloud-cost-api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: api
+          image: cloud-cost-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: cloud-cost-api-secrets
+                optional: true
+            - configMapRef:
+                name: cloud-cost-api-config
+                optional: true
+          env:
+            - name: PYTHONPATH
+              value: /app:/app/cloud-cost
+            - name: RATE_LIMIT_PER_MINUTE
+              value: "120"
+            - name: PREDICT_CACHE_ENABLED
+              value: "1"
+            - name: LATENCY_MODEL_ENABLED
+              value: "1"
+            - name: ASYNC_JOBS_ENABLED
+              value: "1"
+            - name: AUDIT_LOG_ENABLED
+              value: "1"
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 40
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloud-cost-api
+  labels:
+    app: cloud-cost-api
+spec:
+  selector:
+    app: cloud-cost-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: cloud-cost-api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cloud-cost-api
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

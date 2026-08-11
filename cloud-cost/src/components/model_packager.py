@@ -21,6 +21,14 @@ from src.logging.logger import logging
 from src.utils.common import create_directories
 
 REQUIRED_METRICS = {"MAE", "MSE", "RMSE", "R2"}
+# Cost-model digest_ring is sealed over these four logical names only
+# (descending filename order). Latency blobs are optional CAS adjuncts.
+CORE_BLOB_NAMES = (
+    "model.pkl",
+    "metrics.json",
+    "label_encoders.pkl",
+    "feature_columns.json",
+)
 ANCHOR_CLASSES = {
     "bootstrap",
     "major_gain",
@@ -430,9 +438,43 @@ class ModelPackager:
             digest, size = self._store_blob(feature_bytes)
             blob_inventory["feature_columns.json"] = {"sha256": digest, "size": size}
 
+            # Optional latency adjuncts (same version; not part of cost digest_ring).
+            for logical_name, src in (
+                ("latency_model.pkl", self.config.latency_model_path),
+                (
+                    "latency_feature_columns.json",
+                    self.config.latency_feature_schema_path,
+                ),
+                ("latency_metrics.json", self.config.latency_metrics_path),
+            ):
+                if not src:
+                    continue
+                path = Path(src)
+                if not path.is_file():
+                    logging.warning("Optional latency blob missing: %s", path)
+                    continue
+                if logical_name.endswith(".json"):
+                    payload = json.loads(path.read_text(encoding="utf-8"))
+                    if logical_name == "latency_feature_columns.json":
+                        payload = {
+                            **payload,
+                            "model_version": model_version,
+                        }
+                    digest, size = self._store_blob(
+                        json.dumps(payload, indent=2).encode("utf-8")
+                    )
+                else:
+                    digest, size = self._store_file_blob(path)
+                blob_inventory[logical_name] = {"sha256": digest, "size": size}
+
+            missing_core = [n for n in CORE_BLOB_NAMES if n not in blob_inventory]
+            if missing_core:
+                msg = f"Missing core CAS blobs: {missing_core}"
+                raise RuntimeError(msg)
+
             digest_bytes = struct.pack(">I", int(bundle_epoch)) + b"".join(
                 bytes.fromhex(str(blob_inventory[name]["sha256"]))
-                for name in sorted(blob_inventory, reverse=True)
+                for name in CORE_BLOB_NAMES
             )
             digest_ring = hashlib.blake2b(
                 digest_bytes, digest_size=32, person=b"mpip-ring"

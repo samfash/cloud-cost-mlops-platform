@@ -23,13 +23,21 @@ def add_temporal_features(df: pd.DataFrame, timestamp_col: str = "timestamp") ->
         raise CustomException(e, sys) from e
 
 
-def add_engineered_features(df: pd.DataFrame) -> pd.DataFrame:
+def add_engineered_features(
+    df: pd.DataFrame, *, include_latency_ratio: bool = True
+) -> pd.DataFrame:
+    """Shared feature engineering for cost and latency models.
+
+    Latency models must set ``include_latency_ratio=False`` and omit ``latency_ms``
+    from the feature matrix to avoid label leakage.
+    """
     try:
         df["cpu_memory_ratio"] = df["cpu_usage"] / (df["memory_usage"] + 1)
         df["total_io"] = df["net_io"] + df["disk_io"]
         df["io_ratio"] = df["net_io"] / (df["disk_io"] + 1)
         df["resource_efficiency"] = df["throughput"] / (df["cpu_usage"] + df["memory_usage"] + 1)
-        df["latency_throughput_ratio"] = df["latency_ms"] / (df["throughput"] + 1)
+        if include_latency_ratio:
+            df["latency_throughput_ratio"] = df["latency_ms"] / (df["throughput"] + 1)
         df["resource_intensity"] = df["cpu_usage"] * df["memory_usage"] * df["utilization"]
         df["ram_per_vcpu"] = df["RAM_GB"] / df["vCPU"]
         return df

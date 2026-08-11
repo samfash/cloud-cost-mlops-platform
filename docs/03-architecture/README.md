@@ -10,6 +10,7 @@ C4-ish views, sequences, threat/security notes for the implemented Compose syste
 
 ## Contents
 
+- [System design review](system-design/overview.md) (API, auth, cache, queues, k8s, …)
 - [Context](context/context.md)
 - [Containers](containers/containers.md)
 - [Components](components/components.md)

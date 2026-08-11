@@ -92,6 +92,19 @@ class ModelEvaluation:
                     loaded = yaml.safe_load(handle) or {}
                 rf_params = loaded.get("RandomForest", {})
 
+            latency_metrics_path = (
+                Path(self.config.model_path).parent / "latency_metrics.json"
+            )
+            latency_metrics: dict = {}
+            if latency_metrics_path.is_file():
+                with latency_metrics_path.open(encoding="utf-8") as handle:
+                    latency_metrics = json.load(handle)
+                logging.info(
+                    "Latency holdout — R2=%.6f MAE=%.6f (separate from cost gates)",
+                    float(latency_metrics.get("R2", float("nan"))),
+                    float(latency_metrics.get("MAE", float("nan"))),
+                )
+
             with mlflow.start_run(run_name="cloud-cost-evaluation"):
                 for key, value in rf_params.items():
                     mlflow.log_param(f"rf_{key}", value)
@@ -100,8 +113,15 @@ class ModelEvaluation:
                 for metric_name, metric_value in metrics.items():
                     if isinstance(metric_value, (int, float, np.floating)):
                         mlflow.log_metric(metric_name, float(metric_value))
+                for metric_name, metric_value in latency_metrics.items():
+                    if isinstance(metric_value, (int, float, np.floating)):
+                        mlflow.log_metric(f"latency_{metric_name}", float(metric_value))
                 mlflow.log_artifact(self.config.model_path, artifact_path="model")
                 mlflow.log_artifact(str(self.config.metric_file_name), artifact_path="metrics")
+                if latency_metrics_path.is_file():
+                    mlflow.log_artifact(
+                        str(latency_metrics_path), artifact_path="metrics"
+                    )
                 logging.info("Metrics, params, and model logged to MLflow successfully.")
 
             return metrics

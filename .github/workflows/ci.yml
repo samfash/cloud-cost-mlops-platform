@@ -91,7 +91,11 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"instances":[{"timestamp":"1/1/2024 0:00","cpu_usage":43.71,"memory_usage":95.56,"net_io":379.4,"disk_io":638.79,"RAM_GB":1,"vCPU":1,"latency_ms":228.02,"throughput":1380.99,"utilization":69.64,"cloud_provider":"Azure","region":"us-east","vm_type":"t2.micro","target":"scale_up"}]}' \
             | grep -q '"count":1'
-          curl -fsS http://127.0.0.1:8080/ops/model-card | grep -q '"task":"regression"'
+          curl -fsS -X POST http://127.0.0.1:8080/api/predict/latency \
+            -H "Content-Type: application/json" \
+            -d '{"timestamp":"1/1/2024 0:00","cpu_usage":43.71,"memory_usage":95.56,"net_io":379.4,"disk_io":638.79,"RAM_GB":1,"vCPU":1,"throughput":1380.99,"utilization":69.64,"cloud_provider":"Azure","region":"us-east","vm_type":"t2.micro","target":"scale_up"}' \
+            | grep -q '"predicted_latency_ms"'
+          curl -fsS http://127.0.0.1:8080/ops/model-card | grep -q '"task":"multi_regression"'
           curl -fsS -X POST http://127.0.0.1:8081/api/select \
             -H "Content-Type: application/json" \
             -d '{}' | grep -q trial_200
