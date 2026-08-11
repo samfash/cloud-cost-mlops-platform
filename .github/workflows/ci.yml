@@ -110,14 +110,16 @@ jobs:
           curl -fsS 'http://127.0.0.1:9090/api/v1/rules' | grep -q CloudCostModelNotLoaded
           docker compose --profile obs down -v
 
+      # Run Trivy via image (avoid mutable trivy-action tags after 2026 supply-chain incident).
       - name: Container image scan (Trivy)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: cloud-cost-api:ci
-          format: table
-          exit-code: "0"
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.69.3 image \
+            --severity CRITICAL,HIGH \
+            --ignore-unfixed \
+            --exit-code 0 \
+            cloud-cost-api:ci
 
   lint:
     runs-on: ubuntu-latest

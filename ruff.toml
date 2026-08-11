@@ -1,0 +1,3 @@
+# Tests intentionally adjust sys.path before importing project packages.
+[lint.per-file-ignores]
+"tests/**/*.py" = ["E402"]
